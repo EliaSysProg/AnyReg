@@ -30,3 +30,12 @@
 *.exe
 *.out
 *.app
+
+# Build artifacts
+obj/
+bin/
+
+#IDE
+.idea/
+.vs/
+*.user

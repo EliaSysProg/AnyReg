@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnyReg.cpp" />
+    <ClCompile Include="AnyRegDB.cpp" />
     <ClCompile Include="Pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
@@ -148,7 +149,13 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AnyRegDB.hpp" />
     <ClInclude Include="Pch.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLiteWrapper\SQLiteWrapper.vcxproj">
+      <Project>{df3f9d9c-8b9c-4d8f-88f9-8acac0ab5526}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
