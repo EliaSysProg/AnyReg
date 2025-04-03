@@ -23,7 +23,7 @@ jobs:
     strategy:
         matrix:
           BUILD_CONFIGURATION: [Debug, Release]
-          BUILD_PLATFORM: [x64, Win32]
+          BUILD_PLATFORM: [x64, x86]
     runs-on: windows-latest
 
     steps:
