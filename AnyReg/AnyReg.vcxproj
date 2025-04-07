@@ -147,10 +147,12 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="RegistryKey.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnyRegDB.hpp" />
     <ClInclude Include="Pch.hpp" />
+    <ClInclude Include="RegistryKey.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLiteWrapper\SQLiteWrapper.vcxproj">

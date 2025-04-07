@@ -4,37 +4,41 @@ namespace sql
 {
 DatabaseConnection::DatabaseConnection(const std::string_view file_name)
 {
-    const auto error_code = sqlite3_open(file_name.data(), &_db);
+    sqlite3* db = nullptr;
+    const auto error_code = sqlite3_open(file_name.data(), &db);
     if (error_code != SQLITE_OK)
     {
         throw ConnectionError(error_code);
     }
+
+    _db.reset(db);
 }
 
-DatabaseConnection::~DatabaseConnection()
+DatabaseConnection::DatabaseConnection(const std::string_view file_name, const int flags)
 {
-    // From docs [https://www.sqlite.org/c3ref/close.html]:
-    // Calling sqlite3_close() or sqlite3_close_v2() with a NULL pointer argument is a harmless no-op.
-    sqlite3_close(_db);
+    sqlite3* db = nullptr;
+    const auto error_code = sqlite3_open_v2(file_name.data(), &db, flags, nullptr);
+    if (error_code != SQLITE_OK)
+    {
+        throw ConnectionError(error_code);
+    }
+
+    _db.reset(db);
 }
 
-DatabaseConnection::DatabaseConnection(DatabaseConnection&& other) noexcept
-    : _db(std::exchange(other._db, nullptr))
+void DatabaseConnection::DatabaseConnectionDeleter::operator()(sqlite3* db) const noexcept
 {
+    sqlite3_close(db);
 }
 
-DatabaseConnection& DatabaseConnection::operator=(DatabaseConnection&& other) noexcept
-{
-    std::swap(_db, other._db);
-    return *this;
-}
-
-void DatabaseConnection::execute(std::string sql, ExecCallback callback) const
+void DatabaseConnection::execute(const std::string& sql, ExecCallback callback) const
 {
     char* err_msg = nullptr;
-    const int error_code = sqlite3_exec(_db, sql.data(),
+    const int error_code = sqlite3_exec(_db.get(), sql.data(),
                                         [](void* context, const int column_count, char** values, char** column_names) -> int
                                         {
+                                            if (context == nullptr)
+                                                return -1;
                                             const auto function = static_cast<ExecCallback*>(context);
                                             try
                                             {
@@ -43,7 +47,7 @@ void DatabaseConnection::execute(std::string sql, ExecCallback callback) const
                                             }
                                             catch (...)
                                             {
-                                                return -1;
+                                                return -2;
                                             }
                                         }, &callback, &err_msg);
     if (error_code != SQLITE_OK)
@@ -52,13 +56,13 @@ void DatabaseConnection::execute(std::string sql, ExecCallback callback) const
     }
 }
 
-ConnectionError::ConnectionError(const int error_code)
-    : std::runtime_error(sqlite3_errstr(error_code))
+sqlite3* DatabaseConnection::get() const
 {
+    return _db.get();
 }
 
-ConnectionError::ConnectionError(const std::string_view msg)
-    : std::runtime_error({msg.data(), msg.size()})
+const char* DatabaseConnection::errmsg() const
 {
+    return sqlite3_errmsg(_db.get());
 }
 }

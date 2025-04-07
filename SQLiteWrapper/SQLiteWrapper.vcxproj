@@ -20,9 +20,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DatabaseConnection.hpp" />
+    <ClInclude Include="DatabaseError.hpp" />
+    <ClInclude Include="Statement.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="DatabaseConnection.cpp" />
+    <ClCompile Include="DatabaseError.cpp" />
+    <ClCompile Include="Statement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLite\SQLite.vcxproj">
