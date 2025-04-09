@@ -153,14 +153,12 @@
     <ClInclude Include="AnyRegDbConnection.hpp" />
     <ClInclude Include="Pch.hpp" />
     <ClInclude Include="Registry.hpp" />
+    <ClInclude Include="RegistryEntry.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\SQLiteWrapper\SQLiteWrapper.vcxproj">
       <Project>{df3f9d9c-8b9c-4d8f-88f9-8acac0ab5526}</Project>
     </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
-    <Content Include="RegistryEntry.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

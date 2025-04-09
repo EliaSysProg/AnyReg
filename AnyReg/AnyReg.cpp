@@ -1,8 +1,6 @@
 #include "Pch.hpp"
 
 #include "AnyRegDbConnection.hpp"
-#include "Registry.hpp"
-#include "SQLiteWrapper/DatabaseConnection.hpp"
 
 #include <iostream>
 #include <exception>
