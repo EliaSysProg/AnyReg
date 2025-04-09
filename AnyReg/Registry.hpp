@@ -1,4 +1,7 @@
 ﻿#pragma once
+
+#include "RegistryEntry.hpp"
+
 #include <span>
 
 class RegistryKey
@@ -15,8 +18,8 @@ public:
     RegistryKey& operator=(const RegistryKey& other) = delete;
 
     HKEY get();
-    bool get_value(DWORD index, std::span<char> name) const;
-    bool get_sub_key(DWORD index, std::span<char> name) const;
+    [[nodiscard]] bool get_value(DWORD index, std::string& name, RegistryValueType& type) const;
+    [[nodiscard]] bool get_sub_key(DWORD index, std::string& name, RegistryKeyTime& last_write_time) const;
 
     friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
 
