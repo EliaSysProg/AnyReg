@@ -44,14 +44,12 @@
     <ClCompile Include="AnyReg.cpp" />
     <ClCompile Include="AnyRegDbConnection.cpp" />
     <ClCompile Include="Registry.cpp" />
-    <ClCompile Include="ScopeGuard.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnyRegDbConnection.hpp" />
     <ClInclude Include="Registry.hpp" />
     <ClInclude Include="RegistryEntry.hpp" />
-    <ClInclude Include="ScopeGuard.hpp" />
     <ClInclude Include="WinError.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
