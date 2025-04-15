@@ -1,12 +1,13 @@
-﻿#include "Pch.hpp"
-#include "Registry.hpp"
+﻿#include "Registry.hpp"
 
-RegistryKey::RegistryKey(const HKEY root, const std::string_view path, const REGSAM access = KEY_READ)
+#include "WinError.hpp"
+
+RegistryKey::RegistryKey(const HKEY root, const std::wstring& path, const REGSAM access)
 {
-    const auto result = RegOpenKeyExA(root, path.data(), 0, access, &_key);
+    const auto result = RegOpenKeyExW(root, path.data(), 0, access, &_key);
     if (result != ERROR_SUCCESS)
     {
-        throw std::system_error(result, std::system_category());
+        throw WinError(result);
     }
 }
 
@@ -28,18 +29,17 @@ RegistryKey& RegistryKey::operator=(RegistryKey&& other) noexcept
     return *this;
 }
 
-HKEY RegistryKey::get()
+bool RegistryKey::get_value(const DWORD index, std::wstring& name, RegistryValueType& type) const
 {
-    return _key;
-}
-
-bool RegistryKey::get_value(const DWORD index, std::string& name, RegistryValueType& type) const
-{
-    auto temp_name = std::string(MAX_REGISTRY_KEY_VALUE_NAME, '\0');
     DWORD temp_type;
-    DWORD name_size = static_cast<DWORD>(std::size(temp_name));
-    const auto result = RegEnumValueA(_key, index, std::data(temp_name), &name_size, nullptr, &temp_type,
-                                      nullptr, nullptr);
+    LSTATUS result = ERROR_SUCCESS;
+    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](wchar_t* const buffer, const size_t count)
+    {
+        DWORD size = static_cast<DWORD>(count);
+        result = RegEnumValueW(_key, index, buffer, &size, nullptr, &temp_type, nullptr, nullptr);
+        return size;
+    });
+
     if (result != ERROR_SUCCESS)
     {
         if (result == ERROR_NO_MORE_ITEMS)
@@ -47,22 +47,25 @@ bool RegistryKey::get_value(const DWORD index, std::string& name, RegistryValueT
             return false;
         }
 
-        throw std::system_error(result, std::system_category());
+        throw WinError(result);
     }
 
-    temp_name.resize(name_size);
-
-    name = std::move(temp_name);
     type = static_cast<RegistryValueType>(temp_type);
+
     return true;
 }
 
-bool RegistryKey::get_sub_key(const DWORD index, std::string& name, RegistryKeyTime& last_write_time) const
+bool RegistryKey::get_sub_key(const DWORD index, std::wstring& name, RegistryKeyTime& last_write_time) const
 {
-    auto temp_name = std::string(MAX_REGISTRY_KEY_VALUE_NAME, '\0');
-    DWORD name_size = static_cast<DWORD>(std::size(temp_name));
-    FILETIME filetime;
-    const auto result = RegEnumKeyExA(_key, index, std::data(temp_name), &name_size, nullptr, nullptr, nullptr, &filetime);
+    FILETIME file_time;
+    LSTATUS result = ERROR_SUCCESS;
+    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](wchar_t* const buffer, const size_t count)
+    {
+        DWORD size = static_cast<DWORD>(count);
+        result = RegEnumKeyExW(_key, index, buffer, &size, nullptr, nullptr, nullptr, &file_time);
+        return size;
+    });
+
     if (result != ERROR_SUCCESS)
     {
         if (result == ERROR_NO_MORE_ITEMS)
@@ -70,14 +73,12 @@ bool RegistryKey::get_sub_key(const DWORD index, std::string& name, RegistryKeyT
             return false;
         }
 
-        throw std::system_error(result, std::system_category());
+        throw WinError(result);
     }
-    
-    temp_name.resize(name_size);
-    const std::chrono::file_clock::duration d{static_cast<int64_t>(filetime.dwHighDateTime) << 32 | filetime.dwLowDateTime};
 
-    name = std::move(temp_name);
+    const std::chrono::file_clock::duration d{static_cast<int64_t>(file_time.dwHighDateTime) << 32 | file_time.dwLowDateTime};
     last_write_time = RegistryKeyTime{d};
+
     return true;
 }
 

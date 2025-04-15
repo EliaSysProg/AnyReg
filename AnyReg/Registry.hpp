@@ -2,13 +2,13 @@
 
 #include "RegistryEntry.hpp"
 
-#include <span>
+#include <string>
 
 class RegistryKey
 {
 public:
     RegistryKey() = default;
-    explicit RegistryKey(HKEY root, std::string_view path, REGSAM access);
+    explicit RegistryKey(HKEY root, const std::wstring& path, REGSAM access = KEY_READ);
     ~RegistryKey();
 
     RegistryKey(RegistryKey&& other) noexcept;
@@ -17,9 +17,8 @@ public:
     RegistryKey(const RegistryKey& other) = delete;
     RegistryKey& operator=(const RegistryKey& other) = delete;
 
-    HKEY get();
-    [[nodiscard]] bool get_value(DWORD index, std::string& name, RegistryValueType& type) const;
-    [[nodiscard]] bool get_sub_key(DWORD index, std::string& name, RegistryKeyTime& last_write_time) const;
+    [[nodiscard]] bool get_value(DWORD index, std::wstring& name, RegistryValueType& type) const;
+    [[nodiscard]] bool get_sub_key(DWORD index, std::wstring& name, RegistryKeyTime& last_write_time) const;
 
     friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
 

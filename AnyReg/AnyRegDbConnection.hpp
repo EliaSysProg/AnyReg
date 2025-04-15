@@ -1,14 +1,15 @@
 ﻿#pragma once
 
+#include "Registry.hpp"
 #include "RegistryEntry.hpp"
-#include "SQLiteWrapper/DatabaseConnection.hpp"
-#include "SQLiteWrapper/Statement.hpp"
+
+#include <ranges>
 
 class AnyRegDbConnection final
 {
 public:
-    AnyRegDbConnection(std::string_view filename, int flags);
-    ~AnyRegDbConnection();
+    AnyRegDbConnection() = default;
+    ~AnyRegDbConnection() = default;
 
     AnyRegDbConnection(AnyRegDbConnection&& other) noexcept = default;
     AnyRegDbConnection& operator=(AnyRegDbConnection&& other) noexcept = default;
@@ -16,18 +17,14 @@ public:
     AnyRegDbConnection(const AnyRegDbConnection& other) = delete;
     AnyRegDbConnection& operator=(const AnyRegDbConnection& other) = delete;
 
-    void insert_key(const RegistryKeyEntry& key);
-    void insert_value(const RegistryValueEntry& value);
+    void index(HKEY root, std::wstring_view sub_path = L"");
 
-    void index(HKEY root, std::string_view sub_path = "");
-
-private:
-    static sql::DatabaseConnection connect_database(std::string_view filename, int flags);
-    
-    static void create_tables_if_does_not_exist(const sql::DatabaseConnection& connection);
+    [[nodiscard]] auto find_key(std::wstring_view query) const
+    {
+        return _keys | std::views::filter([&query](auto& key_entry) { return key_entry.path.contains(query); });
+    }
 
 private:
-    sql::DatabaseConnection _db;
-    sql::Statement _insert_key_statement;
-    sql::Statement _insert_value_statement;
+    std::vector<RegistryKeyEntry> _keys;
+    std::vector<RegistryValueEntry> _values;
 };

@@ -5,7 +5,7 @@
 #include <string>
 #include <chrono>
 
-static constexpr size_t MAX_REGISTRY_KEY_VALUE_NAME = 255 + 1;
+static constexpr size_t REGISTRY_MAX_KEY_VALUE_NAME = 256;
 
 using RegistryKeyTime = std::chrono::file_time<std::chrono::file_clock::duration>;
 
@@ -23,13 +23,13 @@ enum class RegistryValueType : DWORD
 
 struct RegistryKeyEntry
 {
-    std::string path;
+    std::wstring path;
     RegistryKeyTime last_write_time;
 };
 
 struct RegistryValueEntry
 {
-    std::string name;
-    std::string key;
+    std::wstring name;
+    std::wstring key;
     RegistryValueType type;
 };
