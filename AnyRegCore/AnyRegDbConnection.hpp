@@ -21,7 +21,7 @@ public:
 
     [[nodiscard]] auto find_key(std::wstring_view query) const
     {
-        return _keys | std::views::filter([&query](auto& key_entry) { return key_entry.path.contains(query); });
+        return _keys | std::views::filter([&query](const RegistryKeyEntry& key_entry) { return key_entry.name.contains(query); });
     }
 
 private:

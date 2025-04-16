@@ -56,17 +56,17 @@ void AnyRegDbConnection::index(const HKEY root, std::wstring_view sub_path)
         // Enumerate values
         for (DWORD i = 0; key.get_value(i, value_entry.name, value_entry.type); ++i)
         {
-            value_entry.key = current_key;
+            value_entry.path = current_key;
             _values.push_back(value_entry);
             ++values_count;
         }
 
         // Enumerate subkeys
-        for (DWORD i = 0; key.get_sub_key(i, temp_name, key_entry.last_write_time); ++i)
+        for (DWORD i = 0; key.get_sub_key(i, key_entry.name, key_entry.last_write_time); ++i)
         {
-            key_entry.path = std::format(L"{}{}", current_key, temp_name);
+            key_entry.path = current_key;
             _keys.push_back(key_entry);
-            stack_keys.push_back(key_entry.path);
+            stack_keys.push_back(std::format(L"{}{}{}", key_entry.path, current_key.empty() ? L"" : L"\\", key_entry.name));
         }
     }
 }
