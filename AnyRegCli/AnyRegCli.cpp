@@ -10,10 +10,10 @@ int wmain(const int argc, const wchar_t* const argv[])
         AnyRegDbConnection db;
 
         for (const auto hive : {
-                 HKEY_LOCAL_MACHINE,
+                 // HKEY_LOCAL_MACHINE,
                  HKEY_CURRENT_USER,
-                 HKEY_USERS,
-                 HKEY_CURRENT_CONFIG,
+                 // HKEY_USERS,
+                 // HKEY_CURRENT_CONFIG,
              })
         {
             db.index(hive); // Now db holds the data of `hive`. This operation takes time (a few seconds at least)

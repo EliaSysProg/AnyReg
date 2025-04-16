@@ -1,9 +1,9 @@
 ﻿#pragma once
 
-#include "Registry.hpp"
 #include "RegistryEntry.hpp"
 
 #include <ranges>
+#include <vector>
 
 class AnyRegDbConnection final
 {
@@ -21,7 +21,16 @@ public:
 
     [[nodiscard]] auto find_key(std::wstring_view query) const
     {
-        return _keys | std::views::filter([&query](const RegistryKeyEntry& key_entry) { return key_entry.name.contains(query); });
+        std::vector<RegistryKeyEntry> result;
+        for (const auto& key_entry : _keys)
+        {
+            if (key_entry.name.contains(query))
+            {
+                result.push_back(key_entry);
+            }
+        }
+
+        return result;
     }
 
 private:
