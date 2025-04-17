@@ -43,6 +43,7 @@
   <ItemGroup>
     <ClCompile Include="AnyRegDbConnection.cpp" />
     <ClCompile Include="Registry.cpp" />
+    <ClCompile Include="RegistryEntry.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>

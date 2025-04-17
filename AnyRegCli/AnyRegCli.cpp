@@ -2,6 +2,18 @@
 
 #include <iostream>
 #include <exception>
+#include <print>
+
+template <typename Func>
+static auto timeit(Func&& func)
+{
+    namespace chr = std::chrono;
+    const auto start = chr::high_resolution_clock::now();
+    std::invoke(std::forward<Func>(func));
+    const auto end = chr::high_resolution_clock::now();
+
+    return chr::duration_cast<chr::milliseconds>(end - start);
+}
 
 int wmain(const int argc, const wchar_t* const argv[])
 {
@@ -12,7 +24,10 @@ int wmain(const int argc, const wchar_t* const argv[])
 
         if (argc > 1)
         {
-            for (const auto& [name, path, last_write_time] : db.find_key(argv[1]))
+            std::vector<RegistryKeyEntry> matches;
+            const auto t = timeit([&] { matches = db.find_key(argv[1]); });
+            std::println("Time: {}", t);
+            for (const auto& [name, path, last_write_time] : matches)
             {
                 std::wcout << path << L'\\' << name << L'\n';
             }

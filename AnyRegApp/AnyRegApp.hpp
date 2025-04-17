@@ -1,9 +1,9 @@
 #pragma once
 
+#include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
 #include "AnyRegCore/AnyRegDbConnection.hpp" // Native class
 
-#include <QTimer>
 #include <QtWidgets/QMainWindow>
 
 class AnyRegApp : public QMainWindow
@@ -20,7 +20,7 @@ private slots:
     void on_search_text_changed();
 
 private:
-    Ui::AnyRegAppClass ui;
-    AnyRegDbConnection db;
-    QTimer cooldown_timer;
+    RegistryListModel* _registry_model;
+    Ui::AnyRegAppClass _ui;
+    AnyRegDbConnection _db;
 };

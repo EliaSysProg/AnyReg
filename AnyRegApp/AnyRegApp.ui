@@ -25,7 +25,7 @@
      <widget class="QLineEdit" name="searchBox"/>
     </item>
     <item>
-     <widget class="QListWidget" name="resultList">
+     <widget class="QListView" name="resultList">
       <property name="alternatingRowColors">
        <bool>true</bool>
       </property>
@@ -38,10 +38,13 @@
       <property name="layoutMode">
        <enum>QListView::LayoutMode::Batched</enum>
       </property>
-      <property name="uniformItemSizes">
-       <bool>true</bool>
+      <property name="spacing">
+       <number>0</number>
       </property>
-      <property name="sortingEnabled">
+      <property name="viewMode">
+       <enum>QListView::ViewMode::ListMode</enum>
+      </property>
+      <property name="uniformItemSizes">
        <bool>true</bool>
       </property>
      </widget>

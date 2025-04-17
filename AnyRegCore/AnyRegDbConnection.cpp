@@ -71,14 +71,7 @@ void AnyRegDbConnection::index(const HKEY root, std::wstring_view sub_path)
         {
             key_entry.path = current_key;
             _keys.push_back(key_entry);
-
-            std::wstring sub_key_path = key_entry.path;
-            if (!sub_key_path.empty() && !sub_key_path.ends_with(L"\\"))
-            {
-                sub_key_path.push_back(L'\\');
-            }
-            sub_key_path.append(key_entry.name);
-            stack_keys.push_back(std::move(sub_key_path));
+            stack_keys.push_back(key_entry.get_full_path());
         }
     }
 }
