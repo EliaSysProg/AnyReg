@@ -17,21 +17,11 @@ public:
     AnyRegDbConnection(const AnyRegDbConnection& other) = delete;
     AnyRegDbConnection& operator=(const AnyRegDbConnection& other) = delete;
 
+    void index(const std::vector<HKEY>& hives);
     void index(HKEY root, std::wstring_view sub_path = L"");
 
-    [[nodiscard]] auto find_key(std::wstring_view query) const
-    {
-        std::vector<RegistryKeyEntry> result;
-        for (const auto& key_entry : _keys)
-        {
-            if (key_entry.name.contains(query))
-            {
-                result.push_back(key_entry);
-            }
-        }
-
-        return result;
-    }
+    [[nodiscard]] std::vector<RegistryKeyEntry> find_key(std::wstring_view query) const;
+    [[nodiscard]] std::vector<RegistryKeyEntry> keys() const;
 
 private:
     std::vector<RegistryKeyEntry> _keys;

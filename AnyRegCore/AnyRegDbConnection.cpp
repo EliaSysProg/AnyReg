@@ -9,6 +9,14 @@
 #include <system_error>
 #include <vector>
 
+void AnyRegDbConnection::index(const std::vector<HKEY>& hives)
+{
+    for (const auto hive : hives)
+    {
+        index(hive);
+    }
+}
+
 void AnyRegDbConnection::index(const HKEY root, std::wstring_view sub_path)
 {
     std::vector<std::wstring> stack_keys;
@@ -32,9 +40,6 @@ void AnyRegDbConnection::index(const HKEY root, std::wstring_view sub_path)
 
         auto current_key = std::move(stack_keys.back());
         stack_keys.pop_back();
-
-        if (!current_key.empty() && current_key.back() != L'\\')
-            current_key.push_back(L'\\');
 
         RegistryKey key;
 
@@ -66,7 +71,37 @@ void AnyRegDbConnection::index(const HKEY root, std::wstring_view sub_path)
         {
             key_entry.path = current_key;
             _keys.push_back(key_entry);
-            stack_keys.push_back(std::format(L"{}{}{}", key_entry.path, current_key.empty() ? L"" : L"\\", key_entry.name));
+
+            std::wstring sub_key_path = key_entry.path;
+            if (!sub_key_path.empty() && !sub_key_path.ends_with(L"\\"))
+            {
+                sub_key_path.push_back(L'\\');
+            }
+            sub_key_path.append(key_entry.name);
+            stack_keys.push_back(std::move(sub_key_path));
         }
     }
+}
+
+std::vector<RegistryKeyEntry> AnyRegDbConnection::find_key(const std::wstring_view query) const
+{
+    std::vector<RegistryKeyEntry> result;
+    for (const auto& key_entry : _keys)
+    {
+        if (key_entry.name.contains(query))
+        {
+            result.push_back(key_entry);
+            if (result.size() > 1000)
+            {
+                break;
+            }
+        }
+    }
+
+    return result;
+}
+
+std::vector<RegistryKeyEntry> AnyRegDbConnection::keys() const
+{
+    return _keys | std::views::take(1000) | std::ranges::to<std::vector>();
 }

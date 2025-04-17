@@ -23,15 +23,28 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
+    <QtRcc Include="AnyRegApp.qrc">
+      <Filter>Resource Files</Filter>
+    </QtRcc>
+    <QtUic Include="AnyRegApp.ui">
+      <Filter>Form Files</Filter>
+    </QtUic>
+    <QtMoc Include="AnyRegApp.hpp">
+      <Filter>Header Files</Filter>
+    </QtMoc>
+    <ClCompile Include="AnyRegApp.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClInclude Include="stdafx.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClCompile Include="stdafx.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <QtRcc Include="qml.qrc">
-      <Filter>Resource Files</Filter>
-    </QtRcc>
-    <None Include="main.qml">
-      <Filter>Source Files</Filter>
-    </None>
-
   </ItemGroup>
 </Project>
