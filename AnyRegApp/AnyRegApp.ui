@@ -35,6 +35,9 @@
       <property name="selectionBehavior">
        <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
       </property>
+      <property name="layoutMode">
+       <enum>QListView::LayoutMode::Batched</enum>
+      </property>
       <property name="uniformItemSizes">
        <bool>true</bool>
       </property>

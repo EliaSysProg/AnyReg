@@ -91,10 +91,10 @@ std::vector<RegistryKeyEntry> AnyRegDbConnection::find_key(const std::wstring_vi
         if (key_entry.name.contains(query))
         {
             result.push_back(key_entry);
-            if (result.size() > 1000)
-            {
-                break;
-            }
+            // if (result.size() > 1000)
+            // {
+            //     break;
+            // }
         }
     }
 
@@ -103,5 +103,5 @@ std::vector<RegistryKeyEntry> AnyRegDbConnection::find_key(const std::wstring_vi
 
 std::vector<RegistryKeyEntry> AnyRegDbConnection::keys() const
 {
-    return _keys | std::views::take(1000) | std::ranges::to<std::vector>();
+    return _keys /* | std::views::take(1000) | std::ranges::to<std::vector>()*/;
 }

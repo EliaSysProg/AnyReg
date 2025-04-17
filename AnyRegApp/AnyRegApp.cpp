@@ -14,12 +14,9 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 
     db.index(HKEY_CURRENT_USER);
 
-    cooldown_timer.setSingleShot(true);
-    cooldown_timer.start();
-    cooldown_timer.setInterval(1ms); // 100ms
+    connect(ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::on_search_text_changed);
 
-    connect(ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::onSearchTextChanged);
-    connect(&cooldown_timer, &QTimer::timeout, this, &AnyRegApp::handleDebouncedSearch);
+    on_search_text_changed();
 }
 
 bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
@@ -43,12 +40,7 @@ bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
     return QMainWindow::eventFilter(obj, event);
 }
 
-void AnyRegApp::onSearchTextChanged()
-{
-    cooldown_timer.start();
-}
-
-void AnyRegApp::handleDebouncedSearch()
+void AnyRegApp::on_search_text_changed()
 {
     const auto query = ui.searchBox->text().toStdWString();
     const auto& results = query.empty() ? db.keys() : db.find_key(query);

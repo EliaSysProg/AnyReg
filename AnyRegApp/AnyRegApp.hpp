@@ -11,14 +11,13 @@ class AnyRegApp : public QMainWindow
     Q_OBJECT
 
 public:
-    AnyRegApp(QWidget* parent = nullptr);
+    explicit AnyRegApp(QWidget* parent = nullptr);
 
 private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
-    void onSearchTextChanged();
-    void handleDebouncedSearch();
+    void on_search_text_changed();
 
 private:
     Ui::AnyRegAppClass ui;
