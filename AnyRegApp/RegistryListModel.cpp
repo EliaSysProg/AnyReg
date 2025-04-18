@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
+#include <ranges>
+
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractListModel(parent)
 {
@@ -37,7 +39,7 @@ bool RegistryListModel::canFetchMore(const QModelIndex& parent) const
     if (parent.isValid())
         return false;
 
-    return _visible_entries.size() < _all_entries.size();
+    return _entries.has_value();
 }
 
 void RegistryListModel::fetchMore(const QModelIndex& parent)
@@ -45,37 +47,46 @@ void RegistryListModel::fetchMore(const QModelIndex& parent)
     if (parent.isValid())
         return;
 
-    int remaining = static_cast<int>(_all_entries.size() - _visible_entries.size());
-    int items_to_fetch = std::min(_fetch_chunk_size, remaining);
+    std::vector<RegistryKeyEntry> new_entries;
+    new_entries.reserve(_fetch_chunk_size);
 
-    if (items_to_fetch > 0)
+    int items_fetched = 0;
+    do
     {
-        beginInsertRows(QModelIndex(),
-                        static_cast<int>(_visible_entries.size()),
-                        static_cast<int>(_visible_entries.size() + items_to_fetch - 1));
+        if (_current_entry == _entries.value().end())
+        {
+            _entries = {};
+            _current_entry = {};
+            break;
+        }
 
-        auto start = _all_entries.begin() + _visible_entries.size();
-        auto end = start + items_to_fetch;
-        _visible_entries.insert(_visible_entries.end(), start, end);
-
-        endInsertRows();
+        new_entries.push_back(*_current_entry);
+        ++items_fetched;
+        ++_current_entry;
     }
+    while (items_fetched < _fetch_chunk_size);
+
+    if (items_fetched == 0)
+    {
+        return;
+    }
+
+    beginInsertRows(QModelIndex(),
+                    static_cast<int>(_visible_entries.size()),
+                    static_cast<int>(_visible_entries.size() + items_fetched - 1));
+    _visible_entries.append_range(new_entries);
+    endInsertRows();
 }
 
-void RegistryListModel::set_entries(const std::vector<RegistryKeyEntry>& entries)
+void RegistryListModel::set_entries(MatchesT entries)
 {
     beginResetModel();
-    _all_entries = entries;
+    _entries = entries;
+    _current_entry = _entries.value().begin();
     _visible_entries.clear();
     endResetModel();
 
     // Trigger initial fetch
     if (canFetchMore(QModelIndex()))
         fetchMore(QModelIndex());
-}
-
-void RegistryListModel::refresh()
-{
-    beginResetModel();
-    endResetModel();
 }

@@ -1,4 +1,4 @@
-#include "AnyRegCore/AnyRegDbConnection.hpp"
+#include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <iostream>
 #include <exception>
@@ -19,15 +19,12 @@ int wmain(const int argc, const wchar_t* const argv[])
 {
     try
     {
-        AnyRegDbConnection db;
+        RegistryDatabase db;
         db.index({HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG});
 
         if (argc > 1)
         {
-            std::vector<RegistryKeyEntry> matches;
-            const auto t = timeit([&] { matches = db.find_key(argv[1]); });
-            std::println("Time: {}", t);
-            for (const auto& [name, path, last_write_time] : matches)
+            for (const auto& [name, path, last_write_time] : db.find_key(argv[1]))
             {
                 std::wcout << path << L'\\' << name << L'\n';
             }

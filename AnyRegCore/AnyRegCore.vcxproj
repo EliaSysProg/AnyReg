@@ -41,13 +41,13 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="AnyRegDbConnection.cpp" />
+    <ClCompile Include="RegistryDatabase.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegistryEntry.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AnyRegDbConnection.hpp" />
+    <ClInclude Include="RegistryDatabase.hpp" />
     <ClInclude Include="Registry.hpp" />
     <ClInclude Include="RegistryEntry.hpp" />
     <ClInclude Include="WinError.hpp" />

@@ -45,6 +45,6 @@ bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
 void AnyRegApp::on_search_text_changed()
 {
     const auto query = _ui.searchBox->text().toStdWString();
-    const auto& results = query.empty() ? _db.keys() : _db.find_key(query);
+    const auto& results = _db.find_key(query);
     _registry_model->set_entries(results);
 }

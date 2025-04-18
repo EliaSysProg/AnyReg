@@ -2,7 +2,7 @@
 
 #include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
-#include "AnyRegCore/AnyRegDbConnection.hpp" // Native class
+#include "AnyRegCore/RegistryDatabase.hpp" // Native class
 
 #include <QtWidgets/QMainWindow>
 
@@ -22,5 +22,5 @@ private slots:
 private:
     RegistryListModel* _registry_model;
     Ui::AnyRegAppClass _ui;
-    AnyRegDbConnection _db;
+    RegistryDatabase _db;
 };

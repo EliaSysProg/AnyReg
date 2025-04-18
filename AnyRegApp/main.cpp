@@ -1,5 +1,7 @@
 #include "stdafx.h"
+
 #include "AnyRegApp.hpp"
+
 #include <QtWidgets/QApplication>
 
 int main(int argc, char *argv[])
