@@ -2,7 +2,7 @@
 
 #include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
-#include "AnyRegCore/RegistryDatabase.hpp" // Native class
+#include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <QtWidgets/QMainWindow>
 
@@ -17,10 +17,10 @@ private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
 private slots:
-    void on_search_text_changed();
+    void on_search_text_changed(const QString& query);
 
 private:
     RegistryListModel* _registry_model;
     Ui::AnyRegAppClass _ui;
-    RegistryDatabase _db;
+    anyreg::RegistryDatabase _db;
 };

@@ -1,33 +1,42 @@
 ﻿#pragma once
 
 #include "RegistryEntry.hpp"
+#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
 
-#include <ranges>
-#include <string_view>
 #include <vector>
+#include <string>
 
-class RegistryDatabase final
+#include "FindKeyStatement.hpp"
+#include "InsertKeyStatement.hpp"
+
+namespace anyreg
 {
-public:
-    RegistryDatabase();
-
-    ~RegistryDatabase() = default;
-
-    RegistryDatabase(RegistryDatabase&& other) noexcept = default;
-    RegistryDatabase& operator=(RegistryDatabase&& other) noexcept = default;
-
-    RegistryDatabase(const RegistryDatabase& other) = delete;
-    RegistryDatabase& operator=(const RegistryDatabase& other) = delete;
-
-    void index(const std::vector<HKEY>& hives);
-    void index(HKEY hive, std::wstring_view sub_path = L"");
-
-    [[nodiscard]] auto find_key(const std::wstring_view query) const
+    class RegistryDatabase final
     {
-        return _keys | std::views::filter([&](const auto& key_entry) { return key_entry.name.contains(query); });
-    }
+    public:
+        RegistryDatabase();
+        ~RegistryDatabase() = default;
 
-private:
-    std::vector<RegistryKeyEntry> _keys;
-    std::vector<RegistryValueEntry> _values;
-};
+        RegistryDatabase(RegistryDatabase&& other) noexcept = default;
+        RegistryDatabase& operator=(RegistryDatabase&& other) noexcept = default;
+
+        RegistryDatabase(const RegistryDatabase& other) = delete;
+        RegistryDatabase& operator=(const RegistryDatabase& other) = delete;
+
+        void index(const std::vector<HKEY>& hives);
+        void index(HKEY hive, const std::string& sub_path = {});
+
+        void insert_key(const RegistryKeyEntry& key);
+        void insert_value(const RegistryValueEntry& value);
+
+        std::vector<RegistryKeyEntry> find_keys(const std::string& query);
+
+    private:
+        static sql::DatabaseConnection connect(const std::string& filename);
+        
+        sql::DatabaseConnection _db;
+        InsertKeyStatement _insert_key_statement;
+        sql::Statement _insert_value_statement;
+        FindKeyStatement _find_key_statement;
+    };
+}

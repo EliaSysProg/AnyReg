@@ -2,9 +2,9 @@
 
 #include "WinError.hpp"
 
-RegistryKey::RegistryKey(const HKEY root, const std::wstring& path, const REGSAM access)
+RegistryKey::RegistryKey(const HKEY root, const std::string& path, const REGSAM access)
 {
-    const auto result = RegOpenKeyExW(root, path.data(), 0, access, &_key);
+    const auto result = RegOpenKeyExA(root, path.data(), 0, access, &_key);
     if (result != ERROR_SUCCESS)
     {
         throw WinError(result);
@@ -29,14 +29,14 @@ RegistryKey& RegistryKey::operator=(RegistryKey&& other) noexcept
     return *this;
 }
 
-bool RegistryKey::get_value(const DWORD index, std::wstring& name, RegistryValueType& type) const
+bool RegistryKey::get_value(const DWORD index, std::string& name, RegistryValueType& type) const
 {
     DWORD temp_type;
     LSTATUS result = ERROR_SUCCESS;
-    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](wchar_t* const buffer, const size_t count)
+    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](char* const buffer, const size_t count)
     {
         DWORD size = static_cast<DWORD>(count);
-        result = RegEnumValueW(_key, index, buffer, &size, nullptr, &temp_type, nullptr, nullptr);
+        result = RegEnumValueA(_key, index, buffer, &size, nullptr, &temp_type, nullptr, nullptr);
         return size;
     });
 
@@ -55,14 +55,14 @@ bool RegistryKey::get_value(const DWORD index, std::wstring& name, RegistryValue
     return true;
 }
 
-bool RegistryKey::get_sub_key(const DWORD index, std::wstring& name, RegistryKeyTime& last_write_time) const
+bool RegistryKey::get_sub_key(const DWORD index, std::string& name, RegistryKeyTime& last_write_time) const
 {
     FILETIME file_time;
     LSTATUS result = ERROR_SUCCESS;
-    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](wchar_t* const buffer, const size_t count)
+    name.resize_and_overwrite(REGISTRY_MAX_KEY_VALUE_NAME, [&](char* const buffer, const size_t count)
     {
         DWORD size = static_cast<DWORD>(count);
-        result = RegEnumKeyExW(_key, index, buffer, &size, nullptr, nullptr, nullptr, &file_time);
+        result = RegEnumKeyExA(_key, index, buffer, &size, nullptr, nullptr, nullptr, &file_time);
         return size;
     });
 

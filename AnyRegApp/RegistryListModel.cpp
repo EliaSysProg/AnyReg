@@ -1,92 +1,70 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
+#include <algorithm>
 #include <ranges>
 
 RegistryListModel::RegistryListModel(QObject* parent)
-    : QAbstractListModel(parent)
-{
-}
+    : QAbstractTableModel(parent)
+{}
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
-
-    return static_cast<int>(_visible_entries.size());
+    return static_cast<int>(_all_entries.size());
 }
 
-QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
-{
-    if (!index.isValid() || static_cast<size_t>(index.row()) >= _visible_entries.size())
-        return {};
-
-    const RegistryKeyEntry& entry = _visible_entries[index.row()];
-
-    switch (role)
-    {
-    case Qt::DisplayRole:
-        return QString::fromStdWString(entry.get_full_path());
-    case Qt::ToolTipRole:
-        return QString::fromStdWString(entry.name);
-    default:
-        return {};
-    }
-}
-
-bool RegistryListModel::canFetchMore(const QModelIndex& parent) const
+int RegistryListModel::columnCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
-        return false;
-
-    return _entries.has_value();
+        return 0;
+    return 2; // e.g., Full Path and Name
 }
 
-void RegistryListModel::fetchMore(const QModelIndex& parent)
+QVariant RegistryListModel::data(const QModelIndex& index, int role) const
 {
-    if (parent.isValid())
-        return;
+    if (!index.isValid() || static_cast<size_t>(index.row()) >= _all_entries.size())
+        return {};
 
-    std::vector<RegistryKeyEntry> new_entries;
-    new_entries.reserve(_fetch_chunk_size);
+    const RegistryKeyEntry& entry = _all_entries[index.row()];
 
-    int items_fetched = 0;
-    do
+    if (role == Qt::DisplayRole)
     {
-        if (_current_entry == _entries.value().end())
+        switch (index.column())
         {
-            _entries = {};
-            _current_entry = {};
-            break;
+        case 0: return QString::fromStdString(entry.get_full_path());
+        case 1: return QString::fromStdString(entry.name);
+        default: return {};
         }
-
-        new_entries.push_back(*_current_entry);
-        ++items_fetched;
-        ++_current_entry;
     }
-    while (items_fetched < _fetch_chunk_size);
 
-    if (items_fetched == 0)
+    if (role == Qt::ToolTipRole)
     {
-        return;
+        return QString::fromStdString(entry.name);
     }
 
-    beginInsertRows(QModelIndex(),
-                    static_cast<int>(_visible_entries.size()),
-                    static_cast<int>(_visible_entries.size() + items_fetched - 1));
-    _visible_entries.append_range(new_entries);
-    endInsertRows();
+    return {};
 }
 
-void RegistryListModel::set_entries(MatchesT entries)
+QVariant RegistryListModel::headerData(int section, Qt::Orientation orientation, int role) const
+{
+    if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
+    {
+        switch (section)
+        {
+        case 0: return "Full Path";
+        case 1: return "Name";
+        default: return {};
+        }
+    }
+
+    return QAbstractTableModel::headerData(section, orientation, role);
+}
+
+void RegistryListModel::set_entries(std::vector<RegistryKeyEntry> entries)
 {
     beginResetModel();
-    _entries = entries;
-    _current_entry = _entries.value().begin();
-    _visible_entries.clear();
+    _all_entries = std::move(entries);
     endResetModel();
-
-    // Trigger initial fetch
-    if (canFetchMore(QModelIndex()))
-        fetchMore(QModelIndex());
 }

@@ -41,16 +41,25 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="FindKeyStatement.cpp" />
+    <ClCompile Include="InsertKeyStatement.cpp" />
     <ClCompile Include="RegistryDatabase.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegistryEntry.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="FindKeyStatement.hpp" />
+    <ClInclude Include="InsertKeyStatement.hpp" />
     <ClInclude Include="RegistryDatabase.hpp" />
     <ClInclude Include="Registry.hpp" />
     <ClInclude Include="RegistryEntry.hpp" />
     <ClInclude Include="WinError.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\SQLite3Wrapper\SQLite3Wrapper.vcxproj">
+      <Project>{da2fb236-b0b0-f94b-cfc3-2e8c10fc104f}</Project>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,34 +1,27 @@
 #pragma once
 
-#include "AnyRegCore/RegistryDatabase.hpp"
 #include "AnyRegCore/RegistryEntry.hpp"
 
-#include <QAbstractListModel>
-#include <optional>
+#include <QAbstractTableModel>
 #include <vector>
 
-class RegistryListModel : public QAbstractListModel
+class RegistryListModel : public QAbstractTableModel
 {
     Q_OBJECT
 
 public:
-    using MatchesT = decltype(std::declval<RegistryDatabase>().find_key(L""));
-    using MatchesIteratorT = decltype(std::declval<MatchesT>().begin());
-    
     explicit RegistryListModel(QObject* parent = nullptr);
 
-    int rowCount(const QModelIndex& parent = QModelIndex()) const override;
-    QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    // Required overrides
+    [[nodiscard]] int rowCount(const QModelIndex& parent = QModelIndex()) const override;
+    [[nodiscard]] int columnCount(const QModelIndex& parent = QModelIndex()) const override;
+    [[nodiscard]] QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
+    [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    bool canFetchMore(const QModelIndex& parent) const override;
-    void fetchMore(const QModelIndex& parent) override;
-
-    void set_entries(MatchesT entries);
+    // Set full dataset
+    void set_entries(std::vector<RegistryKeyEntry> entries);
 
 private:
-    std::optional<MatchesT> _entries;
-    MatchesIteratorT _current_entry;
-    std::vector<RegistryKeyEntry> _visible_entries;
-
-    int _fetch_chunk_size = 100;
+    std::vector<RegistryKeyEntry> _all_entries; // Full dataset
+    QString _filter_query;
 };

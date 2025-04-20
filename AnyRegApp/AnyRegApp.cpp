@@ -1,10 +1,6 @@
 #include "stdafx.h"
 #include "AnyRegApp.hpp"
 
-#include <chrono>
-
-using namespace std::chrono_literals;
-
 AnyRegApp::AnyRegApp(QWidget* parent)
     : QMainWindow(parent)
 {
@@ -15,10 +11,9 @@ AnyRegApp::AnyRegApp(QWidget* parent)
     _ui.resultList->setModel(_registry_model);
 
     _db.index(HKEY_LOCAL_MACHINE);
+    on_search_text_changed(""); // Everything
 
     connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::on_search_text_changed);
-
-    on_search_text_changed();
 }
 
 bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
@@ -42,9 +37,7 @@ bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
     return QMainWindow::eventFilter(obj, event);
 }
 
-void AnyRegApp::on_search_text_changed()
+void AnyRegApp::on_search_text_changed(const QString& query)
 {
-    const auto query = _ui.searchBox->text().toStdWString();
-    const auto& results = _db.find_key(query);
-    _registry_model->set_entries(results);
+    _registry_model->set_entries(_db.find_keys(query.toStdString()));
 }

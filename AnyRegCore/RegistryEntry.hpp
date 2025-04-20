@@ -23,16 +23,16 @@ enum class RegistryValueType : DWORD
 
 struct RegistryKeyEntry
 {
-    std::wstring name;
-    std::wstring path;
+    std::string name;
+    std::string path;
     RegistryKeyTime last_write_time;
 
-    [[nodiscard]] std::wstring get_full_path() const;
+    [[nodiscard]] std::string get_full_path() const;
 };
 
 struct RegistryValueEntry
 {
-    std::wstring name;
-    std::wstring path;
+    std::string name;
+    std::string path;
     RegistryValueType type;
 };

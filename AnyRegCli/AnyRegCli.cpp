@@ -15,30 +15,32 @@ static auto timeit(Func&& func)
     return chr::duration_cast<chr::milliseconds>(end - start);
 }
 
-int wmain(const int argc, const wchar_t* const argv[])
+int main(const int argc, const char* const argv[])
 {
     try
     {
-        RegistryDatabase db;
+        anyreg::RegistryDatabase db;
         db.index({HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG});
 
         if (argc > 1)
         {
-            for (const auto& [name, path, last_write_time] : db.find_key(argv[1]))
+            UNREFERENCED_PARAMETER(argv);
+            for (const auto& entry : db.find_keys(argv[1]))
             {
-                std::wcout << path << L'\\' << name << L'\n';
+                std::println("{}", entry.get_full_path());
             }
+            std::cout.flush();
         }
 
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)
     {
-        std::cerr << e.what() << '\n';
+        std::println("C++ Exception: {}", e.what());
     }
     catch (...)
     {
-        std::cerr << "An unknown exception occured!\n";
+        std::println("An unknown exception occured!");
     }
 
     return EXIT_FAILURE;
