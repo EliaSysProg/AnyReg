@@ -112,10 +112,42 @@ CREATE TABLE IF NOT EXISTS RegistryKeys (
     LastWriteTime INTEGER,
     UNIQUE(Name, Path)
 );
-CREATE INDEX IF NOT EXISTS idx_registry_keys_name ON RegistryKeys(Name);
-CREATE INDEX IF NOT EXISTS idx_registry_keys_path ON RegistryKeys(Path);
 )");
 
+        // Create FTS5 virtual table
+        db.execute(R"(
+CREATE VIRTUAL TABLE IF NOT EXISTS RegistryKeys_fts USING fts5(
+    Name, 
+    content='RegistryKeys',
+    content_rowid='ID',
+    tokenize='trigram',
+    prefix='1 2',  /* Enable prefix searches of length 1-2 */
+    columnsize=0   /* Disable column size storage */
+);)");
+
+
+        // Create triggers to keep FTS table in sync
+        db.execute(R"(
+CREATE TRIGGER IF NOT EXISTS RegistryKeys_ai AFTER INSERT ON RegistryKeys BEGIN
+    INSERT INTO RegistryKeys_fts(rowid, Name) 
+    VALUES (new.ID, new.Name);
+END;)");
+
+        db.execute(R"(
+CREATE TRIGGER IF NOT EXISTS RegistryKeys_ad AFTER DELETE ON RegistryKeys BEGIN
+    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) 
+    VALUES('delete', old.ID, old.Name);
+END;)");
+
+        db.execute(R"(
+CREATE TRIGGER IF NOT EXISTS RegistryKeys_au AFTER UPDATE ON RegistryKeys BEGIN
+    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) 
+    VALUES('delete', old.ID, old.Name);
+    INSERT INTO RegistryKeys_fts(rowid, Name) 
+    VALUES (new.ID, new.Name);
+END;)");
+
+        // Create regular table for values
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryValues (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -125,6 +157,11 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     UNIQUE(Name, Path)
 );
 )");
+
+        db.execute("PRAGMA cache_size = 10000;"); // Increase SQLite cache size (in pages)
+        db.execute("PRAGMA temp_store = MEMORY;"); // Store temp tables in memory
+        db.execute("PRAGMA mmap_size = 30000000;"); // Use memory-mapped I/O (adjust size as needed)
+
 
         return db;
     }

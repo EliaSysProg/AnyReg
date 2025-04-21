@@ -3,8 +3,28 @@
 namespace anyreg
 {
     FindKeyStatement::FindKeyStatement(const sql::DatabaseConnection& db)
-        : _statement(db, "SELECT Name, Path, LastWriteTime FROM RegistryKeys WHERE Name LIKE '%' || ?1 || '%' LIMIT 100;")
-    {}
+    : _statement(db, R"(
+WITH search_results AS (
+    -- For queries with 3+ characters, use FTS5 for speed
+    SELECT k.Name, k.Path, k.LastWriteTime
+    FROM RegistryKeys k
+    INNER JOIN RegistryKeys_fts fts ON k.ID = fts.rowid
+    WHERE LENGTH(?1) >= 3 AND RegistryKeys_fts MATCH ?1
+    
+    UNION ALL
+    
+    -- For short queries (1-2 chars), fall back to LIKE search
+    -- Only run this part when search term is short
+    SELECT Name, Path, LastWriteTime
+    FROM RegistryKeys
+    WHERE LENGTH(?1) < 3 AND (Name LIKE '%' || ?1 || '%')
+    -- Limit results for short searches to avoid performance issues
+    LIMIT 100
+)
+SELECT Name, Path, LastWriteTime
+FROM search_results
+ORDER BY Name;)")
+{}
 
     void FindKeyStatement::bind(const std::string& query)
     {

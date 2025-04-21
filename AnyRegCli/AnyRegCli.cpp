@@ -3,6 +3,7 @@
 #include <iostream>
 #include <exception>
 #include <print>
+#include <ranges>
 
 template <typename Func>
 static auto timeit(Func&& func)
@@ -20,16 +21,27 @@ int main(const int argc, const char* const argv[])
     try
     {
         anyreg::RegistryDatabase db;
-        db.index({HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG});
-
-        if (argc > 1)
+        if (argc == 2 && std::string(argv[1]) == "--index")
         {
-            UNREFERENCED_PARAMETER(argv);
-            for (const auto& entry : db.find_keys(argv[1]))
+            db.index({HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG});
+        }
+
+        else
+        {
+            std::string line;
+            std::vector<RegistryKeyEntry> entries;
+            std::print(">> ");
+            while (std::getline(std::cin, line))
             {
-                std::println("{}", entry.get_full_path());
+                const auto time = timeit([&] { entries = db.find_keys(line); });
+                for (const auto& entry : entries | std::views::take(10))
+                {
+                    std::println("{}", entry.get_full_path());
+                }
+                std::println("Results: {}. Time: {}", entries.size(), time);
+                std::print(">> ");
+                std::cout.flush();
             }
-            std::cout.flush();
         }
 
         return EXIT_SUCCESS;
@@ -43,5 +55,6 @@ int main(const int argc, const char* const argv[])
         std::println("An unknown exception occured!");
     }
 
+    std::cout.flush();
     return EXIT_FAILURE;
 }
