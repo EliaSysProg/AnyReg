@@ -43,11 +43,13 @@
   <ItemGroup>
     <ClCompile Include="DatabaseConnection.cpp" />
     <ClCompile Include="DatabaseError.cpp" />
+    <ClCompile Include="QueryUtils.cpp" />
     <ClCompile Include="Statement.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="DatabaseConnection.hpp" />
     <ClInclude Include="DatabaseError.hpp" />
+    <ClInclude Include="QueryUtils.hpp" />
     <ClInclude Include="SQLite3Wrapper.hpp" />
     <ClInclude Include="Statement.hpp" />
   </ItemGroup>

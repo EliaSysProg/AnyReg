@@ -28,8 +28,8 @@ namespace sql
         void clear_bindings();
         int step();
 
-        std::string get_text(int index);
-        uint64_t get_int64(int index);
+        std::string get_text(int index) const;
+        uint64_t get_int64(int index) const;
 
     private:
         std::unique_ptr<sqlite3_stmt, SQLite3StatementDeleter> _sqlite3_stmt;

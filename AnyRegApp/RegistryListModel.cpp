@@ -22,7 +22,7 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
     return 2; // e.g., Full Path and Name
 }
 
-QVariant RegistryListModel::data(const QModelIndex& index, int role) const
+QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
     if (!index.isValid() || static_cast<size_t>(index.row()) >= _all_entries.size())
         return {};
@@ -47,7 +47,7 @@ QVariant RegistryListModel::data(const QModelIndex& index, int role) const
     return {};
 }
 
-QVariant RegistryListModel::headerData(int section, Qt::Orientation orientation, int role) const
+QVariant RegistryListModel::headerData(const int section, const Qt::Orientation orientation, const int role) const
 {
     if (orientation == Qt::Horizontal && role == Qt::DisplayRole)
     {

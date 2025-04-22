@@ -41,7 +41,7 @@ namespace sql
         }
     }
 
-    void Statement::bind_int64(int index, int64_t value)
+    void Statement::bind_int64(const int index, const int64_t value)
     {
         const auto error_code = sqlite3_bind_int64(_sqlite3_stmt.get(), index, value);
         if (error_code != SQLITE_OK)
@@ -50,7 +50,7 @@ namespace sql
         }
     }
 
-    void Statement::bind_int(int index, int value)
+    void Statement::bind_int(const int index, const int value)
     {
         const auto error_code = sqlite3_bind_int(_sqlite3_stmt.get(), index, value);
         if (error_code != SQLITE_OK)
@@ -83,14 +83,14 @@ namespace sql
         return sqlite3_step(_sqlite3_stmt.get());
     }
 
-    std::string Statement::get_text(int index)
+    std::string Statement::get_text(const int index) const
     {
         const auto text = sqlite3_column_text(_sqlite3_stmt.get(), index);
         const auto size = sqlite3_column_bytes(_sqlite3_stmt.get(), index);
         return {reinterpret_cast<const char*>(text), static_cast<size_t>(size)};
     }
 
-    uint64_t Statement::get_int64(int index)
+    uint64_t Statement::get_int64(const int index) const
     {
         return sqlite3_column_int64(_sqlite3_stmt.get(), index);
     }

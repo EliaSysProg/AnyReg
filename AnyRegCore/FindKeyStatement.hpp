@@ -10,7 +10,7 @@ namespace anyreg
     public:
         explicit FindKeyStatement(const sql::DatabaseConnection& db);
 
-        void bind(const std::string& query);
+        void bind(const std::string& user_query);
         [[nodiscard]] bool has_value() const;
         RegistryKeyEntry get_value();
         void step();
