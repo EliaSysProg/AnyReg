@@ -10,7 +10,6 @@ AnyRegApp::AnyRegApp(QWidget* parent)
     _registry_model = new RegistryListModel(this);
     _ui.resultList->setModel(_registry_model);
 
-    _db.index(HKEY_LOCAL_MACHINE);
     on_search_text_changed(""); // Everything
 
     connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::on_search_text_changed);
