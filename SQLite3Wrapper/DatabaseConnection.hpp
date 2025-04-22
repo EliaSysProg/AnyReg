@@ -16,6 +16,7 @@ namespace sql
         };
 
     public:
+        DatabaseConnection() = default;
         explicit DatabaseConnection(const std::string& filename,
                                     int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 

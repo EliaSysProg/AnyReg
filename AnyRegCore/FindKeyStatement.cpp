@@ -1,9 +1,6 @@
 ﻿#include "FindKeyStatement.hpp"
 
 #include <string>
-#include <format>
-
-#include "SQLite3Wrapper/QueryUtils.hpp"
 
 namespace anyreg
 {
@@ -17,6 +14,7 @@ WHERE RegistryKeys_fts MATCH ?)")
 
     void FindKeyStatement::bind(const std::string& user_query)
     {
+        // The escaped query is temporary, so take a copy
         _statement.bind_text(1, sql::query::fts_escape(user_query), true);
     }
 

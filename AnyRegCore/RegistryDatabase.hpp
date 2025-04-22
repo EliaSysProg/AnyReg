@@ -15,13 +15,6 @@ namespace anyreg
     {
     public:
         RegistryDatabase();
-        ~RegistryDatabase() = default;
-
-        RegistryDatabase(RegistryDatabase&& other) noexcept = default;
-        RegistryDatabase& operator=(RegistryDatabase&& other) noexcept = default;
-
-        RegistryDatabase(const RegistryDatabase& other) = delete;
-        RegistryDatabase& operator=(const RegistryDatabase& other) = delete;
 
         void index(const std::vector<HKEY>& hives);
         void index(HKEY hive, const std::string& sub_path = {});

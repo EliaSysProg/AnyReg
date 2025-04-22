@@ -1,5 +1,7 @@
 ﻿#include "RegistryDatabase.hpp"
 
+#include <filesystem>
+
 #include "Registry.hpp"
 
 #include <string>
@@ -103,7 +105,13 @@ namespace anyreg
 
     sql::DatabaseConnection RegistryDatabase::connect(const std::string& filename)
     {
-        auto db = sql::DatabaseConnection(filename);
+        sql::DatabaseConnection db(":memory:");
+        if (std::filesystem::exists(filename))
+        {
+            const auto disk_db = sql::DatabaseConnection(filename);
+            sql::database::backup(disk_db, db);
+        }
+
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -157,11 +165,6 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     UNIQUE(Name, Path)
 );
 )");
-
-        db.execute("PRAGMA cache_size = 10000;"); // Increase SQLite cache size (in pages)
-        db.execute("PRAGMA temp_store = MEMORY;"); // Store temp tables in memory
-        db.execute("PRAGMA mmap_size = 30000000;"); // Use memory-mapped I/O (adjust size as needed)
-
 
         return db;
     }

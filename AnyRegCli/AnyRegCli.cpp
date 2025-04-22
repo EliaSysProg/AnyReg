@@ -13,7 +13,7 @@ static auto timeit(Func&& func)
     std::invoke(std::forward<Func>(func));
     const auto end = chr::high_resolution_clock::now();
 
-    return chr::duration_cast<chr::milliseconds>(end - start);
+    return chr::duration_cast<chr::microseconds>(end - start);
 }
 
 int main(const int argc, const char* const argv[])
