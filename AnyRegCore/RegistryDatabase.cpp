@@ -23,6 +23,9 @@ namespace anyreg
         {
             index(hive);
         }
+
+        const auto disk_db = sql::DatabaseConnection(R"(C:\Windows\Temp\AnyReg.db)");
+        sql::database::backup(_db, disk_db);
     }
 
     void RegistryDatabase::index(const HKEY hive, const std::string& sub_path)
@@ -119,8 +122,7 @@ CREATE TABLE IF NOT EXISTS RegistryKeys (
     Path TEXT NOT NULL,
     LastWriteTime INTEGER,
     UNIQUE(Name, Path)
-);
-)");
+);)");
 
         // Create FTS5 virtual table
         db.execute(R"(
@@ -128,10 +130,7 @@ CREATE VIRTUAL TABLE IF NOT EXISTS RegistryKeys_fts USING fts5(
     Name, 
     content='RegistryKeys',
     content_rowid='ID',
-    tokenize='trigram',
-    prefix='1 2',  /* Enable prefix searches of length 1-2 */
-    columnsize=0   /* Disable column size storage */
-);)");
+    tokenize='trigram');)");
 
 
         // Create triggers to keep FTS table in sync
@@ -163,8 +162,7 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     Path TEXT NOT NULL,
     Type INTEGER,
     UNIQUE(Name, Path)
-);
-)");
+);)");
 
         return db;
     }

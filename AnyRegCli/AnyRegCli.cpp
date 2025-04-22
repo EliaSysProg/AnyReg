@@ -13,7 +13,7 @@ static auto timeit(Func&& func)
     std::invoke(std::forward<Func>(func));
     const auto end = chr::high_resolution_clock::now();
 
-    return chr::duration_cast<chr::microseconds>(end - start);
+    return chr::duration_cast<chr::milliseconds>(end - start);
 }
 
 int main(const int argc, const char* const argv[])
@@ -23,25 +23,27 @@ int main(const int argc, const char* const argv[])
         anyreg::RegistryDatabase db;
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
-            db.index({HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG});
+            db.index({
+                // HKEY_LOCAL_MACHINE,
+                HKEY_CURRENT_USER,
+                // HKEY_USERS,
+                HKEY_CURRENT_CONFIG,
+            });
         }
 
-        else
+        std::string line;
+        std::vector<RegistryKeyEntry> entries;
+        std::print(">> ");
+        while (std::getline(std::cin, line))
         {
-            std::string line;
-            std::vector<RegistryKeyEntry> entries;
-            std::print(">> ");
-            while (std::getline(std::cin, line))
+            const auto time = timeit([&] { entries = db.find_keys(line); });
+            for (const auto& entry : entries | std::views::take(10))
             {
-                const auto time = timeit([&] { entries = db.find_keys(line); });
-                for (const auto& entry : entries | std::views::take(10))
-                {
-                    std::println("{}", entry.get_full_path());
-                }
-                std::println("Results: {}. Time: {}", entries.size(), time);
-                std::print(">> ");
-                std::cout.flush();
+                std::println("{}", entry.get_full_path());
             }
+            std::println("Results: {}. Time: {}", entries.size(), time);
+            std::print(">> ");
+            std::cout.flush();
         }
 
         return EXIT_SUCCESS;

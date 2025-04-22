@@ -17,7 +17,12 @@ namespace anyreg
         void reset_and_clear();
 
     private:
-        sql::Statement _statement;
+        sql::Statement& current_statement();
+        
+        sql::Statement _fts_statement;
+        sql::Statement _like_statement;
+        std::string _escaped_query;
+        bool _is_fts = false;
         bool _has_value = false;
     };
 }

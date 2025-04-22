@@ -5,26 +5,46 @@ namespace sql::query
     std::string fts_escape(const std::string& user_query)
     {
         std::string result;
-        result.reserve(user_query.size() * 2);
+        result.reserve(user_query.size() + 2);
         result += '"';
-        for (const char it : user_query)
+        for (const char c : user_query)
         {
-            switch (it)
+            switch (c)
             {
             case '\'':
-                result += '\'';
-                break;
-            case '"':
-                result += '\"';
+            case '\"':
+                result += c;
                 break;
             default:
                 break;
             }
 
-            result += it;
+            result += c;
         }
 
         result += '"';
+
+        return result;
+    }
+
+    std::string like_clause_escape(const std::string& user_query, char escape_char)
+    {
+        constexpr std::string_view escape_chars = "%_[]";
+        std::string result;
+        result.reserve(user_query.size());
+        for (const char c : user_query)
+        {
+            if (c == escape_char || escape_chars.contains(c))
+            {
+                result += '|';
+            }
+            else if (c == '\'')
+            {
+                result += '\'';
+            }
+
+            result += c;
+        }
 
         return result;
     }
