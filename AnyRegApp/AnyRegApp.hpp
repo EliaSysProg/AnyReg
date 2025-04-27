@@ -1,26 +1,25 @@
 #pragma once
 
-#include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
-#include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <QtWidgets/QMainWindow>
 
-class AnyRegApp : public QMainWindow
+class AnyRegApp final : public QMainWindow
 {
     Q_OBJECT
 
 public:
     explicit AnyRegApp(QWidget* parent = nullptr);
 
+public slots:
+    void start_query(const QString& query);
+
+signals:
+    void query_requested(const QString& query, const std::stop_token& stop_token);
+
 private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
-private slots:
-    void on_search_text_changed(const QString& query);
-
-private:
-    RegistryListModel* _registry_model;
     Ui::AnyRegAppClass _ui;
-    anyreg::RegistryDatabase _db;
+    std::stop_source _stop_source;
 };

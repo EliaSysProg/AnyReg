@@ -1,9 +1,6 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
-#include <algorithm>
-#include <ranges>
-
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
 {}
@@ -19,29 +16,32 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
-    return 2; // e.g., Full Path and Name
+    return 3; // e.g., Full Path and Name
 }
 
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
+    using namespace std::chrono;
     if (!index.isValid() || static_cast<size_t>(index.row()) >= _all_entries.size())
         return {};
 
-    const RegistryKeyEntry& entry = _all_entries[index.row()];
+    const auto& [name, path, last_write_time] = _all_entries[index.row()];
 
     if (role == Qt::DisplayRole)
     {
         switch (index.column())
         {
-        case 0: return QString::fromStdString(entry.get_full_path());
-        case 1: return QString::fromStdString(entry.name);
+        case 0: return QString::fromStdString(name);
+        case 1: return QString::fromStdString(path);
+        case 2: return QDateTime::fromStdTimePoint(
+                time_point_cast<milliseconds>(clock_cast<system_clock>(last_write_time)));
         default: return {};
         }
     }
 
     if (role == Qt::ToolTipRole)
     {
-        return QString::fromStdString(entry.name);
+        return QString::fromStdString(name);
     }
 
     return {};
@@ -53,8 +53,9 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
     {
         switch (section)
         {
-        case 0: return "Full Path";
-        case 1: return "Name";
+        case 0: return "Name";
+        case 1: return "Path";
+        case 2: return "Date Modified";
         default: return {};
         }
     }
@@ -62,7 +63,7 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-void RegistryListModel::set_entries(std::vector<RegistryKeyEntry> entries)
+void RegistryListModel::set_entries(std::vector<anyreg::RegistryKeyEntry> entries)
 {
     beginResetModel();
     _all_entries = std::move(entries);

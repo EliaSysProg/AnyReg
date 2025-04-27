@@ -1,50 +1,71 @@
 ﻿#include "RegistryDatabase.hpp"
 
+#include <deque>
 #include <filesystem>
-
-#include "Registry.hpp"
-
 #include <string>
 #include <system_error>
+#include <vector>
+
+#include "Registry.hpp"
+#include "SQLite3Wrapper/ScopedTransaction.hpp"
 
 namespace anyreg
 {
-    RegistryDatabase::RegistryDatabase()
-        : _db(connect(R"(C:\Windows\Temp\AnyReg.db)")),
-          _insert_key_statement(_db),
-          _insert_value_statement(_db,
-                                  "INSERT INTO RegistryValues (Name, Path, Type) VALUES (?1, ?2, ?3) ON CONFLICT(Name, Path) DO UPDATE SET Type = excluded.Type WHERE excluded.Type != RegistryValues.Type;"),
-          _find_key_statement(_db)
-    {}
+    RegistryDatabase::RegistryDatabase(const int flags)
+        : _db(connect(flags))
+    {
+        const std::filesystem::path path = LR"(C:\Windows\Temp\AnyReg.db)";
+        if (std::filesystem::exists(path))
+        {
+            load(path);
+        }
+    }
 
-    void RegistryDatabase::index(const std::vector<HKEY>& hives)
+    void RegistryDatabase::index(const std::vector<HKEY>& hives, const std::stop_token&)
     {
         for (const auto hive : hives)
         {
-            index(hive);
+            index_hive(hive);
         }
-
-        const auto disk_db = sql::DatabaseConnection(R"(C:\Windows\Temp\AnyReg.db)");
-        sql::database::backup(_db, disk_db);
     }
 
-    void RegistryDatabase::index(const HKEY hive, const std::string& sub_path)
+    void RegistryDatabase::save(const std::filesystem::path& filename) const
     {
-        std::vector<std::string> stack_keys;
-        stack_keys.reserve(0x1000);
+        sql::database::backup(_db, sql::DatabaseConnection(filename.string()));
+    }
+
+    void RegistryDatabase::load(const std::filesystem::path& filename)
+    {
+        sql::database::backup(sql::DatabaseConnection(filename.string()), _db);
+    }
+
+    void RegistryDatabase::index_hive(const HKEY hive, const std::stop_token& stop_token)
+    {
+        index_sub_key(hive, "", stop_token);
+    }
+
+    void RegistryDatabase::index_sub_key(const HKEY hive, const std::string& path, const std::stop_token& stop_token)
+    {
+        std::deque<std::string> keys_to_process;
         // TODO: Add to DB
-        stack_keys.emplace_back(std::begin(sub_path), std::end(sub_path));
+        keys_to_process.emplace_back(path);
 
         RegistryKeyEntry key_entry;
         RegistryValueEntry value_entry;
         std::string temp_name;
 
-        _db.execute("BEGIN TRANSACTION;");
+        size_t key_count = 0;
 
-        while (!stack_keys.empty())
+        while (!keys_to_process.empty())
         {
-            auto current_key = std::move(stack_keys.back());
-            stack_keys.pop_back();
+            if (stop_token.stop_requested())
+            {
+                OutputDebugStringW(L"Request to stop indexing hive at the middle of index_hive\r\n");
+                return;
+            }
+
+            auto current_key = std::move(keys_to_process.front());
+            keys_to_process.pop_front();
 
             RegistryKey key;
 
@@ -73,11 +94,12 @@ namespace anyreg
             {
                 key_entry.path = current_key;
                 insert_key(key_entry);
-                stack_keys.push_back(key_entry.get_full_path());
+                keys_to_process.push_back(key_entry.get_full_path());
             }
-        }
 
-        _db.execute("COMMIT;");
+            ++key_count;
+        }
+        OutputDebugStringW((L"Finished indexing hive: " + std::to_wstring(key_count) + L"\r\n").c_str());
     }
 
     void RegistryDatabase::insert_key(const RegistryKeyEntry& key)
@@ -92,12 +114,25 @@ namespace anyreg
         UNREFERENCED_PARAMETER(value);
     }
 
-    std::vector<RegistryKeyEntry> RegistryDatabase::find_keys(const std::string& query)
+    std::vector<RegistryKeyEntry> RegistryDatabase::find_keys(const std::string& query,
+                                                              const std::stop_token& stop_token)
     {
+        if (stop_token.stop_requested())
+        {
+            OutputDebugStringW(L"Request to stop find operation\r\n");
+            return {};
+        }
         std::vector<RegistryKeyEntry> keys;
         _find_key_statement.bind(query);
         for (_find_key_statement.step(); _find_key_statement.has_value(); _find_key_statement.step())
         {
+            if (stop_token.stop_requested())
+            {
+                OutputDebugStringW(L"Request to stop searching keys\r\n");
+                keys.clear();
+                break;
+            }
+
             keys.push_back(_find_key_statement.get_value());
         }
 
@@ -106,15 +141,9 @@ namespace anyreg
         return keys;
     }
 
-    sql::DatabaseConnection RegistryDatabase::connect(const std::string& filename)
+    sql::DatabaseConnection RegistryDatabase::connect(const int flags)
     {
-        sql::DatabaseConnection db(":memory:");
-        if (std::filesystem::exists(filename))
-        {
-            const auto disk_db = sql::DatabaseConnection(filename);
-            sql::database::backup(disk_db, db);
-        }
-
+        sql::DatabaseConnection db("AnyRegDb", flags);
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -154,7 +183,6 @@ CREATE TRIGGER IF NOT EXISTS RegistryKeys_au AFTER UPDATE ON RegistryKeys BEGIN
     VALUES (new.ID, new.Name);
 END;)");
 
-        // Create regular table for values
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryValues (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -163,6 +191,8 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     Type INTEGER,
     UNIQUE(Name, Path)
 );)");
+
+        db.execute(R"(PRAGMA journal_mode=WAL)");
 
         return db;
     }

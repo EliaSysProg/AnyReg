@@ -2,8 +2,11 @@
 
 #include <iostream>
 #include <exception>
+#include <future>
 #include <print>
 #include <ranges>
+
+#define TRACE(msg) OutputDebugStringW(msg L"\r\n")
 
 template <typename Func>
 static auto timeit(Func&& func)
@@ -21,18 +24,31 @@ int main(const int argc, const char* const argv[])
     try
     {
         anyreg::RegistryDatabase db;
+        std::jthread save_thread;
+
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
+            TRACE(L"Indexing");
             db.index({
                 HKEY_LOCAL_MACHINE,
                 HKEY_CURRENT_USER,
                 HKEY_USERS,
                 HKEY_CURRENT_CONFIG,
+                HKEY_CLASSES_ROOT,
+            });
+
+            save_thread = std::jthread([&db]
+            {
+                TRACE(L"Backing up");
+                db.save(LR"(C:\Windows\Temp\AnyReg.db)");
+                TRACE(L"Backed up");
             });
         }
 
+
+        TRACE(L"Getting input from user");
         std::string line;
-        std::vector<RegistryKeyEntry> entries;
+        std::vector<anyreg::RegistryKeyEntry> entries;
         std::print(">> ");
         while (std::getline(std::cin, line))
         {
@@ -46,6 +62,8 @@ int main(const int argc, const char* const argv[])
             std::cout.flush();
         }
 
+        TRACE(L"Application finished gracefully");
+
         return EXIT_SUCCESS;
     }
     catch (const std::exception& e)
@@ -57,6 +75,7 @@ int main(const int argc, const char* const argv[])
         std::println("An unknown exception occured!");
     }
 
+    TRACE(L"Application aborted");
     std::cout.flush();
     return EXIT_FAILURE;
 }

@@ -24,6 +24,7 @@ namespace sql
 
         [[nodiscard]] sqlite3* get() const; 
         [[nodiscard]] const char* errmsg() const; 
+        [[nodiscard]] const wchar_t* errmsg16() const; 
 
     private:
         std::unique_ptr<sqlite3, SQLite3Deleter> _sqlite3;

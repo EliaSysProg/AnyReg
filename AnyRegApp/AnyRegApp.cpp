@@ -1,18 +1,34 @@
 #include "stdafx.h"
 #include "AnyRegApp.hpp"
 
+#include "RegistryListModel.hpp"
+#include "RegistryQueryController.hpp"
+
 AnyRegApp::AnyRegApp(QWidget* parent)
     : QMainWindow(parent)
 {
     _ui.setupUi(this);
+
     installEventFilter(this);
+    const auto model = new RegistryListModel;
+    _ui.resultList->setModel(model);
+
+    const auto worker = new RegistryQueryController;
+
+    connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::start_query);
+    connect(this ,&AnyRegApp::query_requested, worker, &RegistryQueryController::start_query);
+    connect(worker, &RegistryQueryController::query_finished, model, &RegistryListModel::set_entries);
+
+    start_query("");
+
     _ui.searchBox->setFocus();
-    _registry_model = new RegistryListModel(this);
-    _ui.resultList->setModel(_registry_model);
+}
 
-    on_search_text_changed(""); // Everything
-
-    connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::on_search_text_changed);
+void AnyRegApp::start_query(const QString& query)
+{
+    _stop_source.request_stop();
+    _stop_source = {};
+    emit query_requested(query, _stop_source.get_token());
 }
 
 bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
@@ -34,9 +50,4 @@ bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)
     }
 
     return QMainWindow::eventFilter(obj, event);
-}
-
-void AnyRegApp::on_search_text_changed(const QString& query)
-{
-    _registry_model->set_entries(_db.find_keys(query.toStdString()));
 }

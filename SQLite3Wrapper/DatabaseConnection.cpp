@@ -38,4 +38,9 @@ namespace sql
     {
         return sqlite3_errmsg(_sqlite3.get());
     }
+
+    const wchar_t* DatabaseConnection::errmsg16() const
+    {
+        return static_cast<const wchar_t*>(sqlite3_errmsg16(_sqlite3.get()));
+    }
 }

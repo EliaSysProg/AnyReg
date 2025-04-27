@@ -1,5 +1,7 @@
 ﻿#include "Statement.hpp"
 
+#include <Windows.h>
+
 namespace sql
 {
     void Statement::SQLite3StatementDeleter::operator()(sqlite3_stmt* stmt) const noexcept
@@ -37,6 +39,7 @@ namespace sql
                                                   take_copy ? SQLITE_TRANSIENT : SQLITE_STATIC);
         if (error_code != SQLITE_OK)
         {
+            OutputDebugStringW((L"StatementError: " + std::to_wstring(error_code) + L"\n").c_str());
             throw StatementError(error_code);
         }
     }

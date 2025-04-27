@@ -4,24 +4,29 @@
 
 #include <string>
 
-class RegistryKey
+namespace anyreg
 {
-public:
-    RegistryKey() = default;
-    explicit RegistryKey(HKEY root, const std::string& path, REGSAM access = KEY_READ);
-    ~RegistryKey();
+    class RegistryKey
+    {
+    public:
+        RegistryKey() = default;
+        explicit RegistryKey(HKEY root, const std::string& path, REGSAM access = KEY_READ);
+        ~RegistryKey();
 
-    RegistryKey(RegistryKey&& other) noexcept;
-    RegistryKey& operator=(RegistryKey&& other) noexcept;
+        RegistryKey(RegistryKey&& other) noexcept;
+        RegistryKey& operator=(RegistryKey&& other) noexcept;
 
-    RegistryKey(const RegistryKey& other) = delete;
-    RegistryKey& operator=(const RegistryKey& other) = delete;
+        RegistryKey(const RegistryKey& other) = delete;
+        RegistryKey& operator=(const RegistryKey& other) = delete;
 
-    [[nodiscard]] bool get_value(DWORD index, std::string& name, RegistryValueType& type) const;
-    [[nodiscard]] bool get_sub_key(DWORD index, std::string& name, RegistryKeyTime& last_write_time) const;
+        [[nodiscard]] DWORD sub_key_count() const;
 
-    friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
+        [[nodiscard]] bool get_value(DWORD index, std::string& name, RegistryValueType& type) const;
+        [[nodiscard]] bool get_sub_key(DWORD index, std::string& name, RegistryKeyTime& last_write_time) const;
 
-private:
-    HKEY _key{};
-};
+        friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
+
+    private:
+        HKEY _key{};
+    };
+}

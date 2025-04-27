@@ -1,12 +1,15 @@
 ﻿#include "RegistryEntry.hpp"
 
-std::string RegistryKeyEntry::get_full_path() const
+namespace anyreg
 {
-    std::string sub_key_path = path;
-    if (!sub_key_path.empty() && !sub_key_path.ends_with("\\"))
+    std::string RegistryKeyEntry::get_full_path() const
     {
-        sub_key_path.push_back('\\');
+        std::string sub_key_path = path;
+        if (!sub_key_path.empty() && !sub_key_path.ends_with("\\"))
+        {
+            sub_key_path.push_back('\\');
+        }
+        sub_key_path.append(name);
+        return sub_key_path;
     }
-    sub_key_path.append(name);
-    return sub_key_path;
 }
