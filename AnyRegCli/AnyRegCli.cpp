@@ -48,16 +48,21 @@ int main(const int argc, const char* const argv[])
 
         TRACE(L"Getting input from user");
         std::string line;
-        std::vector<anyreg::RegistryKeyEntry> entries;
         std::print(">> ");
         while (std::getline(std::cin, line))
         {
-            const auto time = timeit([&] { entries = db.find_keys(line); });
-            for (const auto& entry : entries | std::views::take(10))
+            size_t count = 0;
+            const auto t = timeit([&db, &line, &count]
             {
-                std::println("{}", entry.get_full_path());
-            }
-            std::println("Results: {}. Time: {}", entries.size(), time);
+                for (const auto entry : db.find_keys(line))
+                {
+                    if (count > 100) break;
+                    std::println("{}\\{}", entry.path, entry.name);
+                    ++count;
+                }
+            });
+
+            std::println("Results: {}. Time: {}", count, t);
             std::print(">> ");
             std::cout.flush();
         }

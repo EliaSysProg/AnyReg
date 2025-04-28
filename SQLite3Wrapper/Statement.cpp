@@ -86,7 +86,7 @@ namespace sql
         return sqlite3_step(_sqlite3_stmt.get());
     }
 
-    std::string Statement::get_text(const int index) const
+    std::string_view Statement::get_text(const int index) const
     {
         const auto text = sqlite3_column_text(_sqlite3_stmt.get(), index);
         const auto size = sqlite3_column_bytes(_sqlite3_stmt.get(), index);

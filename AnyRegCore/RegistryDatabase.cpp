@@ -114,31 +114,17 @@ namespace anyreg
         UNREFERENCED_PARAMETER(value);
     }
 
-    std::vector<RegistryKeyEntry> RegistryDatabase::find_keys(const std::string& query,
-                                                              const std::stop_token& stop_token)
+    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
+                                                               const std::stop_token& stop_token)
     {
         if (stop_token.stop_requested())
         {
             OutputDebugStringW(L"Request to stop find operation\r\n");
             return {};
         }
-        std::vector<RegistryKeyEntry> keys;
-        _find_key_statement.bind(query);
-        for (_find_key_statement.step(); _find_key_statement.has_value(); _find_key_statement.step())
-        {
-            if (stop_token.stop_requested())
-            {
-                OutputDebugStringW(L"Request to stop searching keys\r\n");
-                keys.clear();
-                break;
-            }
-
-            keys.push_back(_find_key_statement.get_value());
-        }
-
         _find_key_statement.reset_and_clear();
-
-        return keys;
+        _find_key_statement.bind(query);
+        return FindKeyRange{&_find_key_statement};
     }
 
     sql::DatabaseConnection RegistryDatabase::connect(const int flags)

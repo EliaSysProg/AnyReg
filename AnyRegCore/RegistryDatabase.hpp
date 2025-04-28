@@ -4,6 +4,7 @@
 #include <stop_token>
 #include <string>
 #include <vector>
+#include <ranges>
 
 #include "FindKeyStatement.hpp"
 #include "InsertKeyStatement.hpp"
@@ -26,7 +27,30 @@ namespace anyreg
         void insert_key(const RegistryKeyEntry& key);
         void insert_value(const RegistryValueEntry& value);
 
-        std::vector<RegistryKeyEntry> find_keys(const std::string& query, const std::stop_token& stop_token = {});
+        class FindKeyRange
+        {
+        public:
+            FindKeyRange() = default;
+            explicit FindKeyRange(FindKeyStatement* statement)
+                : _statement(statement)
+            {
+            }
+
+            FindKeyStatement::iterator begin()
+            {
+                return _statement ? _statement->begin() : FindKeyStatement::iterator{};
+            }
+
+            FindKeyStatement::iterator end()
+            {
+                return _statement ? _statement->end() : FindKeyStatement::iterator{};
+            }
+
+        private:
+            FindKeyStatement* _statement = nullptr;
+        };
+
+        FindKeyRange find_keys(const std::string& query, const std::stop_token& stop_token = {});
 
     private:
         static sql::DatabaseConnection connect(int flags);
@@ -38,4 +62,10 @@ namespace anyreg
         InsertKeyStatement _insert_key_statement{_db};
         FindKeyStatement _find_key_statement{_db};
     };
+}
+
+namespace std::ranges
+{
+    template<>
+    inline constexpr bool enable_view<anyreg::RegistryDatabase::FindKeyRange> = true;
 }

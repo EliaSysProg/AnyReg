@@ -23,7 +23,7 @@ namespace anyreg
         SZ = REG_SZ,
     };
 
-    struct RegistryKeyEntry
+    struct RegistryKeyEntry final
     {
         std::string name;
         std::string path;
@@ -32,7 +32,14 @@ namespace anyreg
         [[nodiscard]] std::string get_full_path() const;
     };
 
-    struct RegistryValueEntry
+    struct RegistryKeyView final
+    {
+        std::string_view name;
+        std::string_view path;
+        RegistryKeyTime last_write_time;
+    };
+
+    struct RegistryValueEntry final
     {
         std::string name;
         std::string path;
