@@ -29,7 +29,8 @@ namespace anyreg
             iterator() = default;
             explicit iterator(sql::Statement* statement);
 
-            RegistryKeyView operator*() const;
+            const RegistryKeyView& operator*() const;
+            const RegistryKeyView* operator->() const;
             iterator& operator++();
             bool operator!=(const iterator& other) const;
 

@@ -36,12 +36,12 @@ namespace anyreg
             {
             }
 
-            FindKeyStatement::iterator begin()
+            FindKeyStatement::iterator begin() const
             {
                 return _statement ? _statement->begin() : FindKeyStatement::iterator{};
             }
 
-            FindKeyStatement::iterator end()
+            FindKeyStatement::iterator end() const
             {
                 return _statement ? _statement->end() : FindKeyStatement::iterator{};
             }

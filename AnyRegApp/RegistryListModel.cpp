@@ -3,13 +3,15 @@
 
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
-{}
+{
+}
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
-    return static_cast<int>(_all_entries.size());
+
+    return static_cast<int>(_entries.size());
 }
 
 int RegistryListModel::columnCount(const QModelIndex& parent) const
@@ -22,10 +24,10 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
     using namespace std::chrono;
-    if (!index.isValid() || static_cast<size_t>(index.row()) >= _all_entries.size())
+    if (!index.isValid() || static_cast<size_t>(index.row()) >= _entries.size())
         return {};
 
-    const auto& [name, path, last_write_time] = _all_entries[index.row()];
+    const auto& [name, path, last_write_time] = _entries[index.row()];
 
     if (role == Qt::DisplayRole)
     {
@@ -63,9 +65,41 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-void RegistryListModel::set_entries(std::vector<anyreg::RegistryKeyEntry> entries)
+
+void RegistryListModel::fetchMore(const QModelIndex& parent)
+{
+    if (parent.isValid())
+        return;
+
+    constexpr int batch_size = 100; // Or any batch size you prefer
+
+    std::vector<anyreg::RegistryKeyEntry> new_entries;
+    new_entries.reserve(batch_size);
+
+    for (; new_entries.size() < batch_size && _it != _find_operation.end(); ++_it)
+    {
+        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), _it->last_write_time);
+    }
+
+    beginInsertRows(QModelIndex(), static_cast<int>(_entries.size()), static_cast<int>(_entries.size() + new_entries.size() - 1));
+    _entries.append_range(std::move(new_entries));
+    endInsertRows();
+}
+
+bool RegistryListModel::canFetchMore(const QModelIndex& parent) const
+{
+    if (parent.isValid())
+        return false;
+
+    return _it != _find_operation.end();
+}
+
+void RegistryListModel::set_query(const QString& query)
 {
     beginResetModel();
-    _all_entries = std::move(entries);
+    _find_operation = _db.find_keys(query.toStdString());
+    _it = _find_operation.begin();
+    _entries.clear();
     endResetModel();
+    if (canFetchMore({})) fetchMore({});
 }

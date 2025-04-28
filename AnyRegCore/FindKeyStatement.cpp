@@ -50,9 +50,14 @@ WHERE Name LIKE '%' || ?1 || '%' escape '|')")
         ++*this; // Get the first element
     }
 
-    RegistryKeyView FindKeyStatement::iterator::operator*() const
+    const RegistryKeyView& FindKeyStatement::iterator::operator*() const
     {
         return _current;
+    }
+
+    const RegistryKeyView* FindKeyStatement::iterator::operator->() const
+    {
+        return &_current;
     }
 
     FindKeyStatement::iterator& FindKeyStatement::iterator::operator++()

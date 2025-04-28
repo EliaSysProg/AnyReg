@@ -23,6 +23,7 @@ int main(const int argc, const char* const argv[])
 {
     try
     {
+        TRACE(L"Application started");
         anyreg::RegistryDatabase db;
         std::jthread save_thread;
 

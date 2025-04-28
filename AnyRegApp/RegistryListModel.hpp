@@ -1,9 +1,8 @@
 #pragma once
 
-#include "AnyRegCore/RegistryEntry.hpp"
+#include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <QAbstractTableModel>
-#include <vector>
 
 class RegistryListModel : public QAbstractTableModel
 {
@@ -16,9 +15,15 @@ public:
     [[nodiscard]] int columnCount(const QModelIndex& parent = QModelIndex()) const override;
     [[nodiscard]] QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
+    void fetchMore(const QModelIndex& parent) override;
+    bool canFetchMore(const QModelIndex& parent) const override;
 
-    void set_entries(std::vector<anyreg::RegistryKeyEntry> entries);
+    void set_query(const QString& query);
 
 private:
-    std::vector<anyreg::RegistryKeyEntry> _all_entries;
+    anyreg::RegistryDatabase _db;
+    anyreg::RegistryDatabase::FindKeyRange _find_operation = _db.find_keys("");
+    anyreg::FindKeyStatement::iterator _it = _find_operation.begin();
+    std::vector<anyreg::RegistryKeyEntry> _entries;
 };
+

@@ -28,7 +28,7 @@
   <PropertyGroup Label="QtSettings">
     <QtInstall>6.9.0_msvc2022_64</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
-    <QtBuildConfig>$(Configuration)</QtBuildConfig>
+    <QtBuildConfig>$(Configuration).ToLower()</QtBuildConfig>
     <QtDeploy>true</QtDeploy>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
@@ -59,12 +59,10 @@
     <ClCompile Include="AnyRegApp.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegistryListModel.cpp" />
-    <ClCompile Include="RegistryQueryController.cpp" />
     <ClCompile Include="stdafx.cpp" PrecompiledHeader="Create" />
     <ClInclude Include="stdafx.h" />
     <QtMoc Include="AnyRegApp.hpp" />
     <QtMoc Include="RegistryListModel.hpp" />
-    <QtMoc Include="RegistryQueryController.hpp" />
     <QtRcc Include="AnyRegApp.qrc" />
     <QtUic Include="AnyRegApp.ui" />
   </ItemGroup>
