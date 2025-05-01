@@ -82,8 +82,18 @@ namespace sql
 
     int Statement::step()
     {
-        // TODO: Handle error codes
-        return sqlite3_step(_sqlite3_stmt.get());
+        const auto error_code = sqlite3_step(_sqlite3_stmt.get());
+        if (error_code != SQLITE_DONE && error_code != SQLITE_ROW)
+        {
+            throw StatementError(error_code);
+        }
+
+        return error_code;
+    }
+
+    void Statement::finalize()
+    {
+        _sqlite3_stmt.reset();
     }
 
     std::string_view Statement::get_text(const int index) const
