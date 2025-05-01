@@ -18,7 +18,7 @@ public:
     void fetchMore(const QModelIndex& parent) override;
     bool canFetchMore(const QModelIndex& parent) const override;
 
-    void set_query(const QString& query);
+    void set_query(const QString& query, int sort_column, Qt::SortOrder sort_order);
 
 private:
     anyreg::RegistryDatabase _db;

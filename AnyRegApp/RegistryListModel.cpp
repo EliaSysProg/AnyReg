@@ -4,6 +4,7 @@
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
 {
+    
 }
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
@@ -94,12 +95,32 @@ bool RegistryListModel::canFetchMore(const QModelIndex& parent) const
     return _it != _find_operation.end();
 }
 
-void RegistryListModel::set_query(const QString& query)
+void RegistryListModel::set_query(const QString& query, const int sort_column, const Qt::SortOrder sort_order)
 {
+    anyreg::FindKeyStatement::SortColumn column;
+    switch (sort_column)
+    {
+    case 0:
+        column = anyreg::FindKeyStatement::SortColumn::NAME;
+        break;
+    case 1:
+        column = anyreg::FindKeyStatement::SortColumn::PATH;
+        break;
+    case 2:
+        column = anyreg::FindKeyStatement::SortColumn::LAST_WRITE_TIME;
+        break;
+    default:
+        column = anyreg::FindKeyStatement::SortColumn::NAME;
+        break;
+    }
+
+    const anyreg::FindKeyStatement::SortOrder order = sort_order == Qt::AscendingOrder
+                                                    ? anyreg::FindKeyStatement::SortOrder::ASCENDING
+                                                    : anyreg::FindKeyStatement::SortOrder::DESCENDING;
     beginResetModel();
-    _find_operation = _db.find_keys(query.toStdString());
+    _find_operation = _db.find_keys(query.toStdString(), column, order);
     _it = _find_operation.begin();
     _entries.clear();
     endResetModel();
-    if (canFetchMore({})) fetchMore({});
+    // if (canFetchMore({})) fetchMore({});
 }

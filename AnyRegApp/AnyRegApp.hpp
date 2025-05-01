@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
 
 #include <QtWidgets/QMainWindow>
@@ -11,8 +12,12 @@ class AnyRegApp final : public QMainWindow
 public:
     explicit AnyRegApp(QWidget* parent = nullptr);
 
+    private slots:
+    void set_table_query(const QString& query);
+
 private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     Ui::AnyRegAppClass _ui;
+    RegistryListModel* _model = nullptr;
 };
