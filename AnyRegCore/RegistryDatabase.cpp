@@ -117,13 +117,21 @@ namespace anyreg
     RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
                                                                const std::stop_token& stop_token)
     {
+        return find_keys(query, FindKeyStatement::SortColumn::NAME, FindKeyStatement::SortOrder::ASCENDING, stop_token);
+    }
+
+    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
+                                                               FindKeyStatement::SortColumn sort_column,
+                                                               FindKeyStatement::SortOrder order,
+                                                               const std::stop_token& stop_token)
+    {
         if (stop_token.stop_requested())
         {
             OutputDebugStringW(L"Request to stop find operation\r\n");
             return {};
         }
         _find_key_statement.reset_and_clear();
-        _find_key_statement.bind(query);
+        _find_key_statement.bind(query, sort_column, order);
         return FindKeyRange{&_find_key_statement};
     }
 

@@ -31,6 +31,7 @@ namespace anyreg
         {
         public:
             FindKeyRange() = default;
+
             explicit FindKeyRange(FindKeyStatement* statement)
                 : _statement(statement)
             {
@@ -51,12 +52,15 @@ namespace anyreg
         };
 
         FindKeyRange find_keys(const std::string& query, const std::stop_token& stop_token = {});
+        FindKeyRange find_keys(const std::string& query, FindKeyStatement::SortColumn sort_column,
+                               FindKeyStatement::SortOrder order = FindKeyStatement::SortOrder::ASCENDING,
+                               const std::stop_token& stop_token = {});
 
     private:
         static sql::DatabaseConnection connect(int flags);
 
         void index_hive(HKEY hive, const std::stop_token& stop_token = {});
-        void index_sub_key(HKEY hive, const std::string& path,const std::stop_token& stop_token = {});
+        void index_sub_key(HKEY hive, const std::string& path, const std::stop_token& stop_token = {});
 
         sql::DatabaseConnection _db;
         InsertKeyStatement _insert_key_statement{_db};
@@ -66,6 +70,6 @@ namespace anyreg
 
 namespace std::ranges
 {
-    template<>
+    template <>
     inline constexpr bool enable_view<anyreg::RegistryDatabase::FindKeyRange> = true;
 }

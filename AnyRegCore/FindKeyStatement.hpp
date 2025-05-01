@@ -8,12 +8,23 @@ namespace anyreg
     class FindKeyStatement final
     {
     public:
+
+        enum class SortColumn : uint8_t
+        {
+            NAME,
+            PATH,
+            LAST_WRITE_TIME,
+        };
+
+        enum class SortOrder : uint8_t
+        {
+            ASCENDING,
+            DESCENDING,
+        };
+        
         explicit FindKeyStatement(const sql::DatabaseConnection& db);
 
-        void bind(const std::string& user_query);
-        // [[nodiscard]] bool has_value() const;
-        // RegistryKeyEntry get_value();
-        // void step();
+        void bind(const std::string& user_query, SortColumn sort_column = SortColumn::PATH, SortOrder order = SortOrder::ASCENDING);
         void reset_and_clear();
 
     public:
@@ -44,11 +55,10 @@ namespace anyreg
 
     private:
         sql::Statement& current_statement();
-        
-        sql::Statement _fts_statement;
-        sql::Statement _like_statement;
+
+        const sql::DatabaseConnection* _db;
+        sql::Statement _statement;
         std::string _escaped_query;
-        bool _is_fts = false;
         bool _has_value = false;
     };
 }
