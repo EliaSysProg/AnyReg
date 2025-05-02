@@ -4,7 +4,6 @@
 #include <stop_token>
 #include <string>
 #include <vector>
-#include <ranges>
 
 #include "FindKeyStatement.hpp"
 #include "InsertKeyStatement.hpp"
@@ -30,20 +29,10 @@ namespace anyreg
         class FindKeyRange
         {
         public:
-            FindKeyRange(std::shared_ptr<FindKeyStatement> statement = {})
-                : _statement(std::move(statement))
-            {
-            }
-
-            [[nodiscard]] FindKeyStatement::iterator begin() const
-            {
-                return _statement ? _statement->begin() : FindKeyStatement::iterator{};
-            }
-
-            [[nodiscard]] FindKeyStatement::iterator end() const
-            {
-                return _statement ? _statement->end() : FindKeyStatement::iterator{};
-            }
+            FindKeyRange() = default;
+            explicit FindKeyRange(std::shared_ptr<FindKeyStatement> statement);
+            [[nodiscard]] FindKeyStatement::iterator begin() const;
+            [[nodiscard]] FindKeyStatement::iterator end() const;
 
         private:
             std::shared_ptr<FindKeyStatement> _statement = nullptr;
@@ -64,10 +53,4 @@ namespace anyreg
         InsertKeyStatement _insert_key_statement{_db};
         FindKeyStatement _find_key_statement{_db};
     };
-}
-
-namespace std::ranges
-{
-    template <>
-    inline constexpr bool enable_view<anyreg::RegistryDatabase::FindKeyRange> = true;
 }

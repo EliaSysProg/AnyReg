@@ -27,6 +27,7 @@ namespace anyreg
     {
         std::string name;
         std::string path;
+        HKEY hive;
         RegistryKeyTime last_write_time;
 
         [[nodiscard]] std::string get_full_path() const;
@@ -36,6 +37,7 @@ namespace anyreg
     {
         std::string_view name;
         std::string_view path;
+        HKEY hive;
         RegistryKeyTime last_write_time;
     };
 

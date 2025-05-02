@@ -114,6 +114,20 @@ namespace anyreg
         UNREFERENCED_PARAMETER(value);
     }
 
+    RegistryDatabase::FindKeyRange::FindKeyRange(std::shared_ptr<FindKeyStatement> statement): _statement(std::move(statement))
+    {
+    }
+
+    FindKeyStatement::iterator RegistryDatabase::FindKeyRange::begin() const
+    {
+        return _statement ? _statement->begin() : FindKeyStatement::iterator{};
+    }
+
+    FindKeyStatement::iterator RegistryDatabase::FindKeyRange::end() const
+    {
+        return _statement ? _statement->end() : FindKeyStatement::iterator{};
+    }
+
     RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
                                                                const std::stop_token& stop_token)
     {

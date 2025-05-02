@@ -1,6 +1,8 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
+static constexpr size_t FETCH_SIZE = 50;
+
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
 {
@@ -27,23 +29,18 @@ QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
     if (!index.isValid() || static_cast<size_t>(index.row()) >= _entries.size())
         return {};
 
-    const auto& [name, path, last_write_time] = _entries[index.row()];
+    const auto& entry = _entries[index.row()];
 
     if (role == Qt::DisplayRole)
     {
         switch (index.column())
         {
-        case 0: return QString::fromStdString(name);
-        case 1: return QString::fromStdString(path);
+        case 0: return QString::fromStdString(entry.name);
+        case 1: return QString::fromStdString(entry.path);
         case 2: return QDateTime::fromStdTimePoint(
-                time_point_cast<milliseconds>(clock_cast<system_clock>(last_write_time)));
+                time_point_cast<milliseconds>(clock_cast<system_clock>(entry.last_write_time)));
         default: return {};
         }
-    }
-
-    if (role == Qt::ToolTipRole)
-    {
-        return QString::fromStdString(name);
     }
 
     return {};
@@ -71,7 +68,7 @@ void RegistryListModel::fetchMore(const QModelIndex& parent)
     if (parent.isValid())
         return;
 
-    auto new_entries = try_fetch_next(100);
+    auto new_entries = try_fetch_next(FETCH_SIZE);
 
     beginInsertRows(QModelIndex(), static_cast<int>(_entries.size()), static_cast<int>(_entries.size() + new_entries.size() - 1));
     _entries.append_range(std::move(new_entries));
@@ -112,7 +109,7 @@ void RegistryListModel::set_query(const QString& query, const int sort_column, c
     beginResetModel();
     _find_operation = _db.find_keys(query.toStdString(), column, order);
     _it = _find_operation.begin();
-    _entries = try_fetch_next(100);
+    _entries = try_fetch_next(FETCH_SIZE);
     endResetModel();
 }
 
@@ -123,7 +120,7 @@ std::vector<anyreg::RegistryKeyEntry> RegistryListModel::try_fetch_next(const si
 
     for (; new_entries.size() < count && _it != _find_operation.end(); ++_it)
     {
-        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), _it->last_write_time);
+        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), HKEY(), _it->last_write_time);
     }
 
     return new_entries;
