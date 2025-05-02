@@ -12,10 +12,13 @@ AnyRegApp::AnyRegApp(QWidget* parent)
     _model = new RegistryListModel;
     _ui.resultList->setModel(_model);
 
-    connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::set_table_query);
-
     _ui.searchBox->setFocus();
-    _ui.resultList->horizontalHeader()->setSortIndicator(0, Qt::AscendingOrder);
+    _ui.resultList->horizontalHeader()->setSortIndicator(1, Qt::AscendingOrder);
+
+    set_table_query("");
+
+    connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::set_table_query);
+    connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &AnyRegApp::set_table_sort);
 }
 
 void AnyRegApp::set_table_query(const QString& query)
@@ -23,6 +26,11 @@ void AnyRegApp::set_table_query(const QString& query)
     const auto column_index = _ui.resultList->horizontalHeader()->sortIndicatorSection();
     const auto sort_order = _ui.resultList->horizontalHeader()->sortIndicatorOrder();
     _model->set_query(query, column_index, sort_order);
+}
+
+void AnyRegApp::set_table_sort(const int index, const Qt::SortOrder order)
+{
+    _model->set_query(_ui.searchBox->text(), index, order);
 }
 
 bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)

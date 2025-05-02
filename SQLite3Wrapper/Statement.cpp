@@ -80,7 +80,7 @@ namespace sql
         }
     }
 
-    int Statement::step()
+    bool Statement::step()
     {
         const auto error_code = sqlite3_step(_sqlite3_stmt.get());
         if (error_code != SQLITE_DONE && error_code != SQLITE_ROW)
@@ -88,7 +88,7 @@ namespace sql
             throw StatementError(error_code);
         }
 
-        return error_code;
+        return error_code == SQLITE_ROW;
     }
 
     void Statement::finalize()

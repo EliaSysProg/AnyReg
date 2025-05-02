@@ -28,8 +28,13 @@
   <PropertyGroup Label="QtSettings">
     <QtInstall>6.9.0_msvc2022_64</QtInstall>
     <QtModules>core;gui;widgets</QtModules>
-    <QtBuildConfig>$(Configuration).ToLower()</QtBuildConfig>
     <QtDeploy>true</QtDeploy>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)'=='Debug'">
+    <QtBuildConfig>debug</QtBuildConfig>
+  </PropertyGroup>
+  <PropertyGroup Label="QtSettings" Condition="'$(Configuration)'=='Release'">
+    <QtBuildConfig>release</QtBuildConfig>
   </PropertyGroup>
   <Target Name="QtMsBuildNotFound" BeforeTargets="CustomBuild;ClCompile" Condition="!Exists('$(QtMsBuild)\qt.targets') or !Exists('$(QtMsBuild)\qt.props')">
     <Message Importance="High" Text="QtMsBuild: could not locate qt.targets, qt.props; project may not build correctly." />

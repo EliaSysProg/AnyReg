@@ -4,7 +4,6 @@
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
 {
-    
 }
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
@@ -72,15 +71,7 @@ void RegistryListModel::fetchMore(const QModelIndex& parent)
     if (parent.isValid())
         return;
 
-    constexpr int batch_size = 100; // Or any batch size you prefer
-
-    std::vector<anyreg::RegistryKeyEntry> new_entries;
-    new_entries.reserve(batch_size);
-
-    for (; new_entries.size() < batch_size && _it != _find_operation.end(); ++_it)
-    {
-        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), _it->last_write_time);
-    }
+    auto new_entries = try_fetch_next(100);
 
     beginInsertRows(QModelIndex(), static_cast<int>(_entries.size()), static_cast<int>(_entries.size() + new_entries.size() - 1));
     _entries.append_range(std::move(new_entries));
@@ -115,12 +106,25 @@ void RegistryListModel::set_query(const QString& query, const int sort_column, c
     }
 
     const anyreg::FindKeyStatement::SortOrder order = sort_order == Qt::AscendingOrder
-                                                    ? anyreg::FindKeyStatement::SortOrder::ASCENDING
-                                                    : anyreg::FindKeyStatement::SortOrder::DESCENDING;
+                                                          ? anyreg::FindKeyStatement::SortOrder::ASCENDING
+                                                          : anyreg::FindKeyStatement::SortOrder::DESCENDING;
+
     beginResetModel();
     _find_operation = _db.find_keys(query.toStdString(), column, order);
     _it = _find_operation.begin();
-    _entries.clear();
+    _entries = try_fetch_next(100);
     endResetModel();
-    // if (canFetchMore({})) fetchMore({});
+}
+
+std::vector<anyreg::RegistryKeyEntry> RegistryListModel::try_fetch_next(const size_t count)
+{
+    std::vector<anyreg::RegistryKeyEntry> new_entries;
+    new_entries.reserve(count);
+
+    for (; new_entries.size() < count && _it != _find_operation.end(); ++_it)
+    {
+        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), _it->last_write_time);
+    }
+
+    return new_entries;
 }

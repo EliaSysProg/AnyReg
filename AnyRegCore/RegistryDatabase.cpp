@@ -130,9 +130,8 @@ namespace anyreg
             OutputDebugStringW(L"Request to stop find operation\r\n");
             return {};
         }
-        _find_key_statement.reset_and_clear();
-        _find_key_statement.bind(query, sort_column, order);
-        return FindKeyRange{&_find_key_statement};
+
+        return FindKeyRange{std::make_shared<FindKeyStatement>(_db, query, sort_column, order)};
     }
 
     sql::DatabaseConnection RegistryDatabase::connect(const int flags)
@@ -150,7 +149,7 @@ CREATE TABLE IF NOT EXISTS RegistryKeys (
         // Create FTS5 virtual table
         db.execute(R"(
 CREATE VIRTUAL TABLE IF NOT EXISTS RegistryKeys_fts USING fts5(
-    Name, 
+    Name,
     content='RegistryKeys',
     content_rowid='ID',
     tokenize='trigram');)");

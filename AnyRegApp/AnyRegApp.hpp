@@ -12,8 +12,9 @@ class AnyRegApp final : public QMainWindow
 public:
     explicit AnyRegApp(QWidget* parent = nullptr);
 
-    private slots:
+private slots:
     void set_table_query(const QString& query);
+    void set_table_sort(int index, Qt::SortOrder order);
 
 private:
     bool eventFilter(QObject* obj, QEvent* event) override;

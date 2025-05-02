@@ -30,25 +30,23 @@ namespace anyreg
         class FindKeyRange
         {
         public:
-            FindKeyRange() = default;
-
-            explicit FindKeyRange(FindKeyStatement* statement)
-                : _statement(statement)
+            FindKeyRange(std::shared_ptr<FindKeyStatement> statement = {})
+                : _statement(std::move(statement))
             {
             }
 
-            FindKeyStatement::iterator begin() const
+            [[nodiscard]] FindKeyStatement::iterator begin() const
             {
                 return _statement ? _statement->begin() : FindKeyStatement::iterator{};
             }
 
-            FindKeyStatement::iterator end() const
+            [[nodiscard]] FindKeyStatement::iterator end() const
             {
                 return _statement ? _statement->end() : FindKeyStatement::iterator{};
             }
 
         private:
-            FindKeyStatement* _statement = nullptr;
+            std::shared_ptr<FindKeyStatement> _statement = nullptr;
         };
 
         FindKeyRange find_keys(const std::string& query, const std::stop_token& stop_token = {});

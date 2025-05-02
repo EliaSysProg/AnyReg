@@ -5,7 +5,8 @@ namespace anyreg
     InsertKeyStatement::InsertKeyStatement(const sql::DatabaseConnection& db)
         : _statement(db,
                      "INSERT INTO RegistryKeys (Name, Path, LastWriteTime) VALUES (?1, ?2, ?3) ON CONFLICT(Name, Path) DO UPDATE SET LastWriteTime = excluded.LastWriteTime WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;")
-    {}
+    {
+    }
 
     void InsertKeyStatement::bind(const RegistryKeyEntry& entry)
     {
@@ -16,10 +17,9 @@ namespace anyreg
 
     void InsertKeyStatement::execute()
     {
-        const auto error_code = _statement.step();
-        if (error_code != SQLITE_DONE)
+        if (_statement.step())
         {
-            throw sql::StatementError(error_code);
+            throw sql::StatementError("InsertKeyStatement step() should not return rows");
         }
     }
 

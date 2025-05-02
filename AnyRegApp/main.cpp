@@ -12,16 +12,16 @@ int main(int argc, char* argv[])
         QApplication a(argc, argv);
         AnyRegApp w;
         w.show();
-        return a.exec();
+        return QApplication::exec();
     }
     catch (const std::exception& e)
     {
-        qDebug() << "Error: " << e.what();
+        qDebug() << std::format("Error: {}\n{}", e.what(), std::stacktrace::current());
         return 1;
     }
     catch (...)
     {
-        qDebug() << "An unknown exception occured!";
+        qDebug() << std::format("An unknown exception occured!\n{}", std::stacktrace::current());
         return 1;
     }
 }

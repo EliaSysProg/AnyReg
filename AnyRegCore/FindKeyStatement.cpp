@@ -5,10 +5,10 @@
 
 namespace anyreg
 {
-    sql::Statement format_query(const sql::DatabaseConnection& db,
-                                const std::string& query,
-                                const FindKeyStatement::SortColumn sort_column,
-                                const FindKeyStatement::SortOrder sort_order)
+    static sql::Statement format_query(const sql::DatabaseConnection& db,
+                                       const std::string& query,
+                                       const FindKeyStatement::SortColumn sort_column,
+                                       const FindKeyStatement::SortOrder sort_order)
     {
         std::string column;
         switch (sort_column)
@@ -65,27 +65,12 @@ namespace anyreg
         return statement;
     }
 
-    FindKeyStatement::FindKeyStatement(const sql::DatabaseConnection& db)
-        : _db(&db),
-          _statement(format_query(db, "", SortColumn::PATH, SortOrder::ASCENDING))
+    FindKeyStatement::FindKeyStatement(const sql::DatabaseConnection& db,
+                                       const std::string& user_query,
+                                       const SortColumn sort_column,
+                                       const SortOrder order)
+        : _statement(format_query(db, user_query, sort_column, order))
     {
-    }
-
-    void FindKeyStatement::bind(const std::string& user_query, const SortColumn sort_column, const SortOrder order)
-    {
-        _statement.finalize();
-        _statement = format_query(*_db, user_query, sort_column, order);
-    }
-
-    void FindKeyStatement::reset_and_clear()
-    {
-        current_statement().reset();
-        current_statement().clear_bindings();
-    }
-
-    sql::Statement& FindKeyStatement::current_statement()
-    {
-        return _statement;
     }
 
     FindKeyStatement::iterator::iterator(sql::Statement* statement)
@@ -106,24 +91,23 @@ namespace anyreg
 
     FindKeyStatement::iterator& FindKeyStatement::iterator::operator++()
     {
-        if (_statement)
+        if (!_statement)
         {
-            switch (const auto error_code = _statement->step())
-            {
-            case SQLITE_ROW:
-                _current = RegistryKeyView{
-                    .name = _statement->get_text(0),
-                    .path = _statement->get_text(1),
-                    .last_write_time = RegistryKeyTime(std::chrono::file_clock::duration(_statement->get_int64(2)))
-                };
-                break;
-            case SQLITE_DONE:
-                _current = {};
-                _statement = nullptr;
-                break;
-            default:
-                throw sql::StatementError(error_code);
-            }
+            return *this;
+        }
+
+        if (_statement->step())
+        {
+            _current = RegistryKeyView{
+                .name = _statement->get_text(0),
+                .path = _statement->get_text(1),
+                .last_write_time = RegistryKeyTime(std::chrono::file_clock::duration(_statement->get_int64(2)))
+            };
+        }
+        else
+        {
+            _current = {};
+            _statement = nullptr;
         }
 
         return *this;
@@ -136,7 +120,7 @@ namespace anyreg
 
     FindKeyStatement::iterator FindKeyStatement::begin()
     {
-        return iterator(&current_statement());
+        return iterator(&_statement);
     }
 
     FindKeyStatement::iterator FindKeyStatement::end()

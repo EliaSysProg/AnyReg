@@ -8,7 +8,6 @@ namespace anyreg
     class FindKeyStatement final
     {
     public:
-
         enum class SortColumn : uint8_t
         {
             NAME,
@@ -21,13 +20,12 @@ namespace anyreg
             ASCENDING,
             DESCENDING,
         };
-        
-        explicit FindKeyStatement(const sql::DatabaseConnection& db);
 
-        void bind(const std::string& user_query, SortColumn sort_column = SortColumn::PATH, SortOrder order = SortOrder::ASCENDING);
-        void reset_and_clear();
+        explicit FindKeyStatement(const sql::DatabaseConnection& db,
+                                  const std::string& user_query = "",
+                                  SortColumn sort_column = SortColumn::PATH,
+                                  SortOrder order = SortOrder::ASCENDING);
 
-    public:
         class iterator
         {
         public:
@@ -54,11 +52,6 @@ namespace anyreg
         iterator end();
 
     private:
-        sql::Statement& current_statement();
-
-        const sql::DatabaseConnection* _db;
         sql::Statement _statement;
-        std::string _escaped_query;
-        bool _has_value = false;
     };
 }

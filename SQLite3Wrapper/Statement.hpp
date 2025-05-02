@@ -26,7 +26,7 @@ namespace sql
 
         void reset();
         void clear_bindings();
-        int step();
+        bool step();
         void finalize();
 
         std::string_view get_text(int index) const;
