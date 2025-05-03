@@ -1,12 +1,13 @@
 #include "AnyRegCore/RegistryDatabase.hpp"
 
-#include <iostream>
 #include <exception>
+#include <format>
 #include <future>
+#include <iostream>
 #include <print>
 #include <ranges>
 
-#define TRACE(msg) OutputDebugStringW(msg L"\r\n")
+#define TRACE(msg, ...) OutputDebugStringW(std::format(L"[{}:{} | {}] " msg L"\n", __FILEW__, __LINE__, __FUNCTIONW__, __VA_ARGS__).c_str())
 
 template <typename Func>
 static auto timeit(Func&& func)
@@ -58,7 +59,7 @@ int main(const int argc, const char* const argv[])
                 for (const auto entry : db.find_keys(line))
                 {
                     if (count > 100) break;
-                    std::println("{}\\{}", entry.path, entry.name);
+                    std::println("{}", entry.get_full_path());
                     ++count;
                 }
             });
@@ -82,6 +83,5 @@ int main(const int argc, const char* const argv[])
     }
 
     TRACE(L"Application aborted");
-    std::cout.flush();
     return EXIT_FAILURE;
 }

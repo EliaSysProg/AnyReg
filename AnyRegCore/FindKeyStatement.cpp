@@ -35,14 +35,14 @@ namespace anyreg
         bool should_bind;
         if (query.empty())
         {
-            sql_string = std::format("SELECT Name, Path, LastWriteTime FROM RegistryKeys ORDER BY {}", order_by);
+            sql_string = std::format("SELECT Name, Hive, Path, LastWriteTime FROM RegistryKeys ORDER BY {}", order_by);
             escaped_query = query;
             should_bind = false;
         }
         else if (query.size() < 3)
         {
             sql_string = std::format(
-                "SELECT Name, Path, LastWriteTime FROM RegistryKeys WHERE Name LIKE '%' || ?1 || '%' escape '|' ORDER BY {}",
+                "SELECT Name, Hive, Path, LastWriteTime FROM RegistryKeys WHERE Name LIKE '%' || ?1 || '%' escape '|' ORDER BY {}",
                 order_by);
             escaped_query = sql::query::like_clause_escape(query, '|');
             should_bind = true;
@@ -50,7 +50,7 @@ namespace anyreg
         else
         {
             sql_string = std::format(
-                "SELECT k.Name, k.Path, k.LastWriteTime FROM RegistryKeys k INNER JOIN RegistryKeys_fts fts ON k.ID = fts.rowid WHERE RegistryKeys_fts MATCH ?1 ORDER BY k.{}",
+                "SELECT k.Name, k.Hive, k.Path, k.LastWriteTime FROM RegistryKeys k INNER JOIN RegistryKeys_fts fts ON k.ID = fts.rowid WHERE RegistryKeys_fts MATCH ?1 ORDER BY k.{}",
                 order_by);
             escaped_query = sql::query::fts_escape(query);
             should_bind = true;
@@ -100,8 +100,9 @@ namespace anyreg
         {
             _current = RegistryKeyView{
                 .name = _statement->get_text(0),
-                .path = _statement->get_text(1),
-                .last_write_time = RegistryKeyTime(std::chrono::file_clock::duration(_statement->get_int64(2)))
+                .hive = reinterpret_cast<HKEY>(static_cast<ULONG_PTR>(_statement->get_int64(1))),
+                .path = _statement->get_text(2),
+                .last_write_time = RegistryKeyTime(std::chrono::file_clock::duration(_statement->get_int64(3)))
             };
         }
         else

@@ -5,12 +5,26 @@
 #include <string>
 #include <system_error>
 #include <vector>
+#include <array>
 
 #include "Registry.hpp"
 #include "SQLite3Wrapper/ScopedTransaction.hpp"
 
 namespace anyreg
 {
+    constexpr static bool is_predefined_hkey(const HKEY hkey)
+    {
+        static const std::array KNOWN_HIVES = {
+            HKEY_LOCAL_MACHINE,
+            HKEY_CURRENT_USER,
+            HKEY_CLASSES_ROOT,
+            HKEY_USERS,
+            HKEY_CURRENT_CONFIG
+        };
+
+        return std::ranges::contains(KNOWN_HIVES, hkey);
+    }
+
     RegistryDatabase::RegistryDatabase(const int flags)
         : _db(connect(flags))
     {
@@ -41,14 +55,13 @@ namespace anyreg
 
     void RegistryDatabase::index_hive(const HKEY hive, const std::stop_token& stop_token)
     {
-        index_sub_key(hive, "", stop_token);
-    }
+        if (!is_predefined_hkey(hive))
+        {
+            throw std::invalid_argument("hive must be a predefined key");
+        }
 
-    void RegistryDatabase::index_sub_key(const HKEY hive, const std::string& path, const std::stop_token& stop_token)
-    {
         std::deque<std::string> keys_to_process;
-        // TODO: Add to DB
-        keys_to_process.emplace_back(path);
+        keys_to_process.emplace_back("");
 
         RegistryKeyEntry key_entry;
         RegistryValueEntry value_entry;
@@ -93,8 +106,9 @@ namespace anyreg
             for (DWORD i = 0; key.get_sub_key(i, key_entry.name, key_entry.last_write_time); ++i)
             {
                 key_entry.path = current_key;
+                key_entry.hive = hive;
                 insert_key(key_entry);
-                keys_to_process.push_back(key_entry.get_full_path());
+                keys_to_process.push_back(std::filesystem::path(key_entry.path).append(key_entry.name).string());
             }
 
             ++key_count;
@@ -155,6 +169,7 @@ namespace anyreg
 CREATE TABLE IF NOT EXISTS RegistryKeys (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
+    Hive INTEGER NOT NULL,
     Path TEXT NOT NULL,
     LastWriteTime INTEGER,
     UNIQUE(Name, Path)
@@ -194,6 +209,7 @@ END;)");
 CREATE TABLE IF NOT EXISTS RegistryValues (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
+    Hive INTEGER NOT NULL,
     Path TEXT NOT NULL,
     Type INTEGER,
     UNIQUE(Name, Path)

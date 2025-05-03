@@ -103,7 +103,7 @@ namespace sql
         return {reinterpret_cast<const char*>(text), static_cast<size_t>(size)};
     }
 
-    uint64_t Statement::get_int64(const int index) const
+    int64_t Statement::get_int64(const int index) const
     {
         return sqlite3_column_int64(_sqlite3_stmt.get(), index);
     }

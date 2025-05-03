@@ -47,7 +47,6 @@ namespace anyreg
         static sql::DatabaseConnection connect(int flags);
 
         void index_hive(HKEY hive, const std::stop_token& stop_token = {});
-        void index_sub_key(HKEY hive, const std::string& path, const std::stop_token& stop_token = {});
 
         sql::DatabaseConnection _db;
         InsertKeyStatement _insert_key_statement{_db};

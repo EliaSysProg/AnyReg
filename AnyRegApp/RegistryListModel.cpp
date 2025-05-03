@@ -20,7 +20,7 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
-    return 3; // e.g., Full Path and Name
+    return 3;
 }
 
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
@@ -36,7 +36,7 @@ QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
         switch (index.column())
         {
         case 0: return QString::fromStdString(entry.name);
-        case 1: return QString::fromStdString(entry.path);
+        case 1: return QString::fromStdString(entry.get_absolute_path());
         case 2: return QDateTime::fromStdTimePoint(
                 time_point_cast<milliseconds>(clock_cast<system_clock>(entry.last_write_time)));
         default: return {};
@@ -120,7 +120,7 @@ std::vector<anyreg::RegistryKeyEntry> RegistryListModel::try_fetch_next(const si
 
     for (; new_entries.size() < count && _it != _find_operation.end(); ++_it)
     {
-        new_entries.emplace_back(std::string(_it->name), std::string(_it->path), HKEY(), _it->last_write_time);
+        new_entries.emplace_back(std::string(_it->name), _it->hive, std::string(_it->path), _it->last_write_time);
     }
 
     return new_entries;

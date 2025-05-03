@@ -26,19 +26,23 @@ namespace anyreg
     struct RegistryKeyEntry final
     {
         std::string name;
-        std::string path;
         HKEY hive;
+        std::string path;
         RegistryKeyTime last_write_time;
 
+        [[nodiscard]] std::string get_absolute_path() const;
         [[nodiscard]] std::string get_full_path() const;
     };
 
     struct RegistryKeyView final
     {
         std::string_view name;
-        std::string_view path;
         HKEY hive;
+        std::string_view path;
         RegistryKeyTime last_write_time;
+
+        [[nodiscard]] std::string get_absolute_path() const;
+        [[nodiscard]] std::string get_full_path() const;
     };
 
     struct RegistryValueEntry final

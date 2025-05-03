@@ -14,6 +14,10 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 
     _ui.searchBox->setFocus();
     _ui.resultList->horizontalHeader()->setSortIndicator(1, Qt::AscendingOrder);
+    _ui.resultList->horizontalHeader()->setDefaultAlignment(Qt::AlignLeft | Qt::AlignVCenter);
+    QFont bold_font = _ui.resultList->horizontalHeader()->font();
+    bold_font.setBold(true);
+    _ui.resultList->horizontalHeader()->setFont(bold_font);
 
     set_table_query("");
 
