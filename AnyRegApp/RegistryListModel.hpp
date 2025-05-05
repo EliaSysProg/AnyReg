@@ -21,11 +21,18 @@ public:
     void set_query(const QString& query, int sort_column, Qt::SortOrder sort_order);
 
 private:
-    std::vector<anyreg::RegistryKeyEntry> try_fetch_next(size_t count);
+    struct QRegistryKeyEntry
+    {
+        QString name;
+        QString path;
+        QDateTime last_write_time;
+    };
+    
+    std::vector<QRegistryKeyEntry> try_fetch_next(size_t count);
     
     anyreg::RegistryDatabase _db;
     anyreg::RegistryDatabase::FindKeyRange _find_operation;
     anyreg::FindKeyStatement::iterator _it;
-    std::vector<anyreg::RegistryKeyEntry> _entries;
+    std::vector<QRegistryKeyEntry> _entries;
 };
 

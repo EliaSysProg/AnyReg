@@ -23,7 +23,7 @@ namespace anyreg
             column = "LastWriteTime";
             break;
         default:
-            column = "Name";
+            column = "Path";
             break;
         }
 

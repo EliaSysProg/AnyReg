@@ -38,6 +38,9 @@
       <property name="verticalScrollMode">
        <enum>QAbstractItemView::ScrollMode::ScrollPerItem</enum>
       </property>
+      <property name="showGrid">
+       <bool>false</bool>
+      </property>
       <property name="gridStyle">
        <enum>Qt::PenStyle::NoPen</enum>
       </property>

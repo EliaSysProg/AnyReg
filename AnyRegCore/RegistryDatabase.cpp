@@ -215,7 +215,13 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     UNIQUE(Name, Path)
 );)");
 
-        db.execute(R"(PRAGMA journal_mode=WAL)");
+        db.execute("PRAGMA journal_mode=WAL");
+        db.execute("PRAGMA temp_store = MEMORY");
+        db.execute("PRAGMA cache_size = 1000000;");
+
+        db.execute("CREATE INDEX idx_registrykeys_name ON RegistryKeys(Name);");
+        db.execute("CREATE INDEX idx_registrykeys_path ON RegistryKeys(Path);");
+        db.execute("CREATE INDEX idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime);");
 
         return db;
     }

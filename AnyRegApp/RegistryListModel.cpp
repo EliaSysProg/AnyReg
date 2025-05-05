@@ -1,7 +1,7 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
-static constexpr size_t FETCH_SIZE = 50;
+static constexpr size_t FETCH_SIZE = 1024;
 
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent)
@@ -20,25 +20,24 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
 {
     if (parent.isValid())
         return 0;
+
     return 3;
 }
 
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
-    using namespace std::chrono;
     if (!index.isValid() || static_cast<size_t>(index.row()) >= _entries.size())
         return {};
 
-    const auto& entry = _entries[index.row()];
+    const auto& [name, path, last_write_time] = _entries[index.row()];
 
     if (role == Qt::DisplayRole)
     {
         switch (index.column())
         {
-        case 0: return QString::fromStdString(entry.name);
-        case 1: return QString::fromStdString(entry.get_absolute_path());
-        case 2: return QDateTime::fromStdTimePoint(
-                time_point_cast<milliseconds>(clock_cast<system_clock>(entry.last_write_time)));
+        case 0: return name;
+        case 1: return path;
+        case 2: return last_write_time;
         default: return {};
         }
     }
@@ -113,14 +112,18 @@ void RegistryListModel::set_query(const QString& query, const int sort_column, c
     endResetModel();
 }
 
-std::vector<anyreg::RegistryKeyEntry> RegistryListModel::try_fetch_next(const size_t count)
+std::vector<RegistryListModel::QRegistryKeyEntry> RegistryListModel::try_fetch_next(const size_t count)
 {
-    std::vector<anyreg::RegistryKeyEntry> new_entries;
-    new_entries.reserve(count);
+    using namespace std::chrono;
+
+    std::vector<QRegistryKeyEntry> new_entries;
+    new_entries.reserve(std::min(count, 0x1000ull));
 
     for (; new_entries.size() < count && _it != _find_operation.end(); ++_it)
     {
-        new_entries.emplace_back(std::string(_it->name), _it->hive, std::string(_it->path), _it->last_write_time);
+        new_entries.emplace_back(QString::fromLocal8Bit(_it->name),
+                                 QString::fromLocal8Bit(_it->get_absolute_path()),
+                                 QDateTime::fromStdTimePoint(time_point_cast<milliseconds>(clock_cast<system_clock>(_it->last_write_time))));
     }
 
     return new_entries;
