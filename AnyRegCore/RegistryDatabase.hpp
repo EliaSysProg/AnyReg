@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <stop_token>
 #include <string>
-#include <vector>
+#include <span>
 
 #include "FindKeyStatement.hpp"
 #include "InsertKeyStatement.hpp"
@@ -19,7 +19,7 @@ namespace anyreg
             | SQLITE_OPEN_CREATE
             | SQLITE_OPEN_MEMORY);
 
-        void index(const std::vector<HKEY>& hives, const std::stop_token& stop_token = {});
+        void index(std::span<const HKEY> hives, const std::stop_token& stop_token = {});
         void save(const std::filesystem::path& filename) const;
         void load(const std::filesystem::path& filename);
 

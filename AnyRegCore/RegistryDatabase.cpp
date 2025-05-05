@@ -35,7 +35,7 @@ namespace anyreg
         }
     }
 
-    void RegistryDatabase::index(const std::vector<HKEY>& hives, const std::stop_token&)
+    void RegistryDatabase::index(const std::span<const HKEY> hives, const std::stop_token&)
     {
         for (const auto hive : hives)
         {

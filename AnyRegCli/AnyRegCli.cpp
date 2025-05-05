@@ -1,5 +1,6 @@
 #include "AnyRegCore/RegistryDatabase.hpp"
 
+#include <array>
 #include <exception>
 #include <format>
 #include <future>
@@ -31,7 +32,7 @@ int main(const int argc, const char* const argv[])
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
             TRACE(L"Indexing");
-            db.index({
+            db.index(std::array{
                 HKEY_LOCAL_MACHINE,
                 HKEY_CURRENT_USER,
                 HKEY_USERS,
