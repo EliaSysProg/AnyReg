@@ -4,8 +4,7 @@
 #include <filesystem>
 #include <string>
 #include <system_error>
-#include <vector>
-#include <array>
+#include <algorithm>
 
 #include "Registry.hpp"
 #include "SQLite3Wrapper/ScopedTransaction.hpp"
@@ -14,15 +13,8 @@ namespace anyreg
 {
     constexpr static bool is_predefined_hkey(const HKEY hkey)
     {
-        static const std::array KNOWN_HIVES = {
-            HKEY_LOCAL_MACHINE,
-            HKEY_CURRENT_USER,
-            HKEY_CLASSES_ROOT,
-            HKEY_USERS,
-            HKEY_CURRENT_CONFIG
-        };
-
-        return std::ranges::contains(KNOWN_HIVES, hkey);
+        static constexpr auto HIVES = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CLASSES_ROOT, HKEY_USERS, HKEY_CURRENT_CONFIG};
+        return std::ranges::any_of(HIVES, [&](const auto hive) { return hkey == hive; });
     }
 
     RegistryDatabase::RegistryDatabase(const int flags)

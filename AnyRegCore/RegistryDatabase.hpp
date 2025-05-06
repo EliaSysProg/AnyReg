@@ -50,6 +50,5 @@ namespace anyreg
 
         sql::DatabaseConnection _db;
         InsertKeyStatement _insert_key_statement{_db};
-        FindKeyStatement _find_key_statement{_db};
     };
 }
