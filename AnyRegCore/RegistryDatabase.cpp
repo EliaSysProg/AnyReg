@@ -13,18 +13,18 @@ namespace anyreg
 {
     constexpr static bool is_predefined_hkey(const HKEY hkey)
     {
-        static constexpr auto HIVES = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CLASSES_ROOT, HKEY_USERS, HKEY_CURRENT_CONFIG};
+        static const auto HIVES = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CLASSES_ROOT, HKEY_USERS, HKEY_CURRENT_CONFIG};
         return std::ranges::any_of(HIVES, [&](const auto hive) { return hkey == hive; });
     }
 
     RegistryDatabase::RegistryDatabase(const int flags)
-        : _db(connect(flags))
+        : _db(connect(flags | SQLITE_OPEN_NOMUTEX))
     {
-        const std::filesystem::path path = LR"(C:\Windows\Temp\AnyReg.db)";
-        if (std::filesystem::exists(path))
-        {
-            load(path);
-        }
+        // const std::filesystem::path path = L"AnyReg.db";
+        // if (std::filesystem::exists(path))
+        // {
+        //     load(path);
+        // }
     }
 
     void RegistryDatabase::index(const std::span<const HKEY> hives, const std::stop_token&)
@@ -120,7 +120,8 @@ namespace anyreg
         UNREFERENCED_PARAMETER(value);
     }
 
-    RegistryDatabase::FindKeyRange::FindKeyRange(std::shared_ptr<FindKeyStatement> statement): _statement(std::move(statement))
+    RegistryDatabase::FindKeyRange::FindKeyRange(std::shared_ptr<FindKeyStatement> statement)
+        : _statement(std::move(statement))
     {
     }
 
@@ -134,8 +135,7 @@ namespace anyreg
         return _statement ? _statement->end() : FindKeyStatement::iterator{};
     }
 
-    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
-                                                               const std::stop_token& stop_token)
+    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query, const std::stop_token& stop_token)
     {
         return find_keys(query, FindKeyStatement::SortColumn::NAME, FindKeyStatement::SortOrder::ASCENDING, stop_token);
     }
@@ -152,6 +152,22 @@ namespace anyreg
         }
 
         return FindKeyRange{std::make_shared<FindKeyStatement>(_db, query, sort_column, order)};
+    }
+
+    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
+                                                               FindKeyStatement::SortColumn sort_column,
+                                                               FindKeyStatement::SortOrder order,
+                                                               size_t offset,
+                                                               size_t limit) const
+    {
+        return FindKeyRange{std::make_shared<FindKeyStatement>(_db, query, sort_column, order, offset, limit)};
+    }
+
+    size_t RegistryDatabase::get_key_count(const std::string& query,
+                                           const FindKeyStatement::SortColumn sort_column,
+                                           const FindKeyStatement::SortOrder order) const
+    {
+        return FindKeyStatement::get_count(_db, query, sort_column, order);
     }
 
     sql::DatabaseConnection RegistryDatabase::connect(const int flags)
@@ -207,13 +223,11 @@ CREATE TABLE IF NOT EXISTS RegistryValues (
     UNIQUE(Name, Path)
 );)");
 
-        db.execute("PRAGMA journal_mode=WAL");
-        db.execute("PRAGMA temp_store = MEMORY");
-        db.execute("PRAGMA cache_size = 1000000;");
+        db.execute("PRAGMA journal_mode = WAL");
 
-        db.execute("CREATE INDEX idx_registrykeys_name ON RegistryKeys(Name);");
-        db.execute("CREATE INDEX idx_registrykeys_path ON RegistryKeys(Path);");
-        db.execute("CREATE INDEX idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime);");
+        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_name ON RegistryKeys(Name)");
+        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_path ON RegistryKeys(Path)");
+        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
 
         return db;
     }

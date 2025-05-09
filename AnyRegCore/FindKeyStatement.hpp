@@ -26,6 +26,13 @@ namespace anyreg
                                   SortColumn sort_column = SortColumn::PATH,
                                   SortOrder order = SortOrder::ASCENDING);
 
+        FindKeyStatement(const sql::DatabaseConnection& db,
+                         const std::string& user_query,
+                         SortColumn sort_column,
+                         SortOrder order,
+                         size_t offset,
+                         size_t limit);
+
         class iterator
         {
         public:
@@ -50,6 +57,11 @@ namespace anyreg
 
         iterator begin();
         iterator end();
+
+        static size_t get_count(const sql::DatabaseConnection& db,
+                                const std::string& user_query,
+                                SortColumn sort_column,
+                                SortOrder order);
 
     private:
         sql::Statement _statement;

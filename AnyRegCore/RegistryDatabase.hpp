@@ -15,9 +15,7 @@ namespace anyreg
     class RegistryDatabase final
     {
     public:
-        explicit RegistryDatabase(int flags = SQLITE_OPEN_READWRITE
-            | SQLITE_OPEN_CREATE
-            | SQLITE_OPEN_MEMORY);
+        explicit RegistryDatabase(int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
 
         void index(std::span<const HKEY> hives, const std::stop_token& stop_token = {});
         void save(const std::filesystem::path& filename) const;
@@ -39,9 +37,21 @@ namespace anyreg
         };
 
         FindKeyRange find_keys(const std::string& query, const std::stop_token& stop_token = {});
-        FindKeyRange find_keys(const std::string& query, FindKeyStatement::SortColumn sort_column,
+
+        FindKeyRange find_keys(const std::string& query,
+                               FindKeyStatement::SortColumn sort_column,
                                FindKeyStatement::SortOrder order = FindKeyStatement::SortOrder::ASCENDING,
                                const std::stop_token& stop_token = {});
+
+        FindKeyRange find_keys(const std::string& query,
+                               FindKeyStatement::SortColumn sort_column,
+                               FindKeyStatement::SortOrder order,
+                               size_t offset,
+                               size_t limit) const;
+
+        size_t get_key_count(const std::string& query,
+                             FindKeyStatement::SortColumn sort_column,
+                             FindKeyStatement::SortOrder order) const;
 
     private:
         static sql::DatabaseConnection connect(int flags);

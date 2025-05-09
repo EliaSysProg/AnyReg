@@ -1,10 +1,17 @@
 #include "stdafx.h"
 #include "RegistryListModel.hpp"
 
-static constexpr size_t FETCH_SIZE = 1024;
+using namespace std::chrono;
+
+// static constexpr size_t FETCH_SIZE = 20;
 
 RegistryListModel::RegistryListModel(QObject* parent)
-    : QAbstractTableModel(parent)
+    : QAbstractTableModel(parent),
+      _db(SQLITE_OPEN_READONLY),
+      _record_count(0),
+      _offset(0),
+      _sort_column(),
+      _sort_order()
 {
 }
 
@@ -13,7 +20,7 @@ int RegistryListModel::rowCount(const QModelIndex& parent) const
     if (parent.isValid())
         return 0;
 
-    return static_cast<int>(_entries.size());
+    return static_cast<int>(_record_count);
 }
 
 int RegistryListModel::columnCount(const QModelIndex& parent) const
@@ -26,10 +33,17 @@ int RegistryListModel::columnCount(const QModelIndex& parent) const
 
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
-    if (!index.isValid() || static_cast<size_t>(index.row()) >= _entries.size())
+    if (!index.isValid() || index.row() >= rowCount())
         return {};
 
-    const auto& [name, path, last_write_time] = _entries[index.row()];
+    const auto row = static_cast<size_t>(index.row());
+
+    if (row < _offset || row >= _offset + _entries.size())
+    {
+        fetch(row >= 20 ? row - 20 : 0, 40);
+    }
+
+    const auto& [name, path, last_write_time] = _entries.at(row - _offset);
 
     if (role == Qt::DisplayRole)
     {
@@ -61,70 +75,59 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-
-void RegistryListModel::fetchMore(const QModelIndex& parent)
-{
-    if (parent.isValid())
-        return;
-
-    auto new_entries = try_fetch_next(FETCH_SIZE);
-
-    beginInsertRows(QModelIndex(), static_cast<int>(_entries.size()), static_cast<int>(_entries.size() + new_entries.size() - 1));
-    _entries.append_range(std::move(new_entries));
-    endInsertRows();
-}
-
-bool RegistryListModel::canFetchMore(const QModelIndex& parent) const
-{
-    if (parent.isValid())
-        return false;
-
-    return _it != _find_operation.end();
-}
-
 void RegistryListModel::set_query(const QString& query, const int sort_column, const Qt::SortOrder sort_order)
 {
-    anyreg::FindKeyStatement::SortColumn column;
+    beginResetModel();
+
     switch (sort_column)
     {
     case 0:
-        column = anyreg::FindKeyStatement::SortColumn::NAME;
+        _sort_column = anyreg::FindKeyStatement::SortColumn::NAME;
         break;
     case 1:
-        column = anyreg::FindKeyStatement::SortColumn::PATH;
+        _sort_column = anyreg::FindKeyStatement::SortColumn::PATH;
         break;
     case 2:
-        column = anyreg::FindKeyStatement::SortColumn::LAST_WRITE_TIME;
+        _sort_column = anyreg::FindKeyStatement::SortColumn::LAST_WRITE_TIME;
         break;
     default:
-        column = anyreg::FindKeyStatement::SortColumn::NAME;
+        _sort_column = anyreg::FindKeyStatement::SortColumn::NAME;
         break;
     }
 
-    const anyreg::FindKeyStatement::SortOrder order = sort_order == Qt::AscendingOrder
-                                                          ? anyreg::FindKeyStatement::SortOrder::ASCENDING
-                                                          : anyreg::FindKeyStatement::SortOrder::DESCENDING;
+    _sort_order = sort_order == Qt::AscendingOrder
+                      ? anyreg::FindKeyStatement::SortOrder::ASCENDING
+                      : anyreg::FindKeyStatement::SortOrder::DESCENDING;
 
-    beginResetModel();
-    _find_operation = _db.find_keys(query.toStdString(), column, order);
-    _it = _find_operation.begin();
-    _entries = try_fetch_next(FETCH_SIZE);
+    _query = query.toStdString();
+    _record_count = _db.get_key_count(_query, _sort_column, _sort_order);
+    qDebug() << std::format("Got {} results for query: {}", _record_count, _query);
+
+    fetch(0, 40);
     endResetModel();
 }
 
-std::vector<RegistryListModel::QRegistryKeyEntry> RegistryListModel::try_fetch_next(const size_t count)
+RegistryListModel::QRegistryKeyEntry::QRegistryKeyEntry(QString name, QString path, QDateTime last_write_time)
+    : name(std::move(name)),
+      path(std::move(path)),
+      last_write_time(std::move(last_write_time))
 {
-    using namespace std::chrono;
+}
 
-    std::vector<QRegistryKeyEntry> new_entries;
-    new_entries.reserve(std::min(count, 0x1000ull));
+RegistryListModel::QRegistryKeyEntry::QRegistryKeyEntry(const anyreg::RegistryKeyView& key)
+    : name(QString::fromLocal8Bit(key.name)),
+      path(QString::fromLocal8Bit(key.get_absolute_path())),
+      last_write_time(QDateTime::fromStdTimePoint(time_point_cast<milliseconds>(clock_cast<system_clock>(key.last_write_time))))
+{
+}
 
-    for (; new_entries.size() < count && _it != _find_operation.end(); ++_it)
+void RegistryListModel::fetch(const size_t offset, const size_t limit) const
+{
+    _offset = offset;
+    _entries.clear();
+    const auto range = _db.find_keys(_query, _sort_column, _sort_order, offset, limit);
+    for (const auto& key : range)
     {
-        new_entries.emplace_back(QString::fromLocal8Bit(_it->name),
-                                 QString::fromLocal8Bit(_it->get_absolute_path()),
-                                 QDateTime::fromStdTimePoint(time_point_cast<milliseconds>(clock_cast<system_clock>(_it->last_write_time))));
+        _entries.emplace_back(key);
     }
-
-    return new_entries;
 }

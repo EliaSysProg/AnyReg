@@ -26,11 +26,12 @@ int main(const int argc, const char* const argv[])
     try
     {
         TRACE(L"Application started");
-        anyreg::RegistryDatabase db;
+
         std::jthread save_thread;
 
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
+            anyreg::RegistryDatabase db;
             TRACE(L"Indexing");
             db.index(std::array{
                 HKEY_LOCAL_MACHINE,
@@ -40,34 +41,35 @@ int main(const int argc, const char* const argv[])
                 HKEY_CLASSES_ROOT,
             });
 
-            save_thread = std::jthread([&db]
+            save_thread = std::jthread([]
             {
+                const anyreg::RegistryDatabase db(SQLITE_OPEN_READONLY);
                 TRACE(L"Backing up");
-                db.save(LR"(C:\Windows\Temp\AnyReg.db)");
+                db.save(L"AnyReg.db");
                 TRACE(L"Backed up");
             });
         }
 
 
+        anyreg::RegistryDatabase db(SQLITE_OPEN_READONLY);
         TRACE(L"Getting input from user");
         std::string line;
         std::print(">> ");
-        while (std::getline(std::cin, line))
+        while (std::getline(std::cin, line) && line != ".quit")
         {
-            size_t count = 0;
-            const auto t = timeit([&db, &line, &count]
+            const auto t = timeit([&db, &line]
             {
-                for (const auto entry : db.find_keys(line))
+                for (const auto entry : db.find_keys(line,
+                                                     anyreg::FindKeyStatement::SortColumn::PATH,
+                                                     anyreg::FindKeyStatement::SortOrder::ASCENDING,
+                                                     0, 100))
                 {
-                    if (count > 100) break;
                     std::println("{}", entry.get_full_path());
-                    ++count;
                 }
             });
 
-            std::println("Results: {}. Time: {}", count, t);
+            std::println("Time: {}", t);
             std::print(">> ");
-            std::cout.flush();
         }
 
         TRACE(L"Application finished gracefully");

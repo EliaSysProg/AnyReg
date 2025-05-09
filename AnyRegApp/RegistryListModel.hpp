@@ -15,8 +15,6 @@ public:
     [[nodiscard]] int columnCount(const QModelIndex& parent = QModelIndex()) const override;
     [[nodiscard]] QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
-    void fetchMore(const QModelIndex& parent) override;
-    bool canFetchMore(const QModelIndex& parent) const override;
 
     void set_query(const QString& query, int sort_column, Qt::SortOrder sort_order);
 
@@ -26,13 +24,19 @@ private:
         QString name;
         QString path;
         QDateTime last_write_time;
+
+        QRegistryKeyEntry(QString name, QString path, QDateTime last_write_time);
+        QRegistryKeyEntry(const anyreg::RegistryKeyView& key);
     };
-    
-    std::vector<QRegistryKeyEntry> try_fetch_next(size_t count);
+
+    void fetch(size_t offset, size_t limit) const;
     
     anyreg::RegistryDatabase _db;
-    anyreg::RegistryDatabase::FindKeyRange _find_operation;
-    anyreg::FindKeyStatement::iterator _it;
-    std::vector<QRegistryKeyEntry> _entries;
+    std::string _query;
+    size_t _record_count;
+    mutable std::vector<QRegistryKeyEntry> _entries;
+    mutable size_t _offset;
+    anyreg::FindKeyStatement::SortColumn _sort_column;
+    anyreg::FindKeyStatement::SortOrder _sort_order;
 };
 
