@@ -5,12 +5,12 @@
 #include <stacktrace>
 #include <QtWidgets/QApplication>
 
-void log_current_stack_trace()
+static void log_stack_trace(const std::stacktrace& stacktrace)
 {
-    const auto stacktrace = std::stacktrace::current();
-    for (const auto& frame : stacktrace)
+    for (const auto& entry : stacktrace)
     {
-        qDebug() << frame.description();
+        if (entry.source_file().empty()) continue;
+        qDebug() << std::format("{}:{}", entry.source_file(), entry.source_line());
     }
 }
 
@@ -23,16 +23,20 @@ int main(int argc, char* argv[])
         w.show();
         return QApplication::exec();
     }
+    catch (const sql::DatabaseError& e)
+    {
+        qDebug() << std::format("Database error: {}", e.what());
+        log_stack_trace(e.stacktrace());
+        return 1;
+    }
     catch (const std::exception& e)
     {
         qDebug() << std::format("Error: {}", e.what());
-        log_current_stack_trace();
         return 1;
     }
     catch (...)
     {
         qDebug() << std::format("An unknown exception occured!");
-        log_current_stack_trace();
         return 1;
     }
 }

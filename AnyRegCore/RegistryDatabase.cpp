@@ -18,13 +18,14 @@ namespace anyreg
     }
 
     RegistryDatabase::RegistryDatabase(const int flags)
-        : _db(connect(flags | SQLITE_OPEN_NOMUTEX))
+        : _db(connect(flags | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_MEMORY)),
+          _insert_key_statement(_db)
     {
-        // const std::filesystem::path path = L"AnyReg.db";
-        // if (std::filesystem::exists(path))
-        // {
-        //     load(path);
-        // }
+        const std::filesystem::path path = L"AnyReg.db";
+        if (std::filesystem::exists(path))
+        {
+            load(path);
+        }
     }
 
     void RegistryDatabase::index(const std::span<const HKEY> hives, const std::stop_token&)
@@ -173,6 +174,12 @@ namespace anyreg
     sql::DatabaseConnection RegistryDatabase::connect(const int flags)
     {
         sql::DatabaseConnection db("AnyRegDb", flags);
+
+        if (flags & SQLITE_OPEN_READONLY)
+        {
+            return db;
+        }
+
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
     ID INTEGER PRIMARY KEY AUTOINCREMENT,

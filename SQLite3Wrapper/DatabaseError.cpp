@@ -5,12 +5,18 @@
 namespace sql
 {
     DatabaseError::DatabaseError(const int error_code)
-        : std::runtime_error(sqlite3_errstr(error_code))
+        : DatabaseError(sqlite3_errstr(error_code))
     {
     }
 
     DatabaseError::DatabaseError(const std::string_view msg)
-        : std::runtime_error({msg.data(), msg.size()})
+        : std::runtime_error({msg.data(), msg.size()}),
+          _stacktrace(std::stacktrace::current())
     {
+    }
+
+    const std::stacktrace& DatabaseError::stacktrace() const noexcept
+    {
+        return _stacktrace;
     }
 }

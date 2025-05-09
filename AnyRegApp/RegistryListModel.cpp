@@ -7,7 +7,6 @@ using namespace std::chrono;
 
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent),
-      _db(SQLITE_OPEN_READONLY),
       _record_count(0),
       _offset(0),
       _sort_column(),
@@ -100,8 +99,11 @@ void RegistryListModel::set_query(const QString& query, const int sort_column, c
                       : anyreg::FindKeyStatement::SortOrder::DESCENDING;
 
     _query = query.toStdString();
+    const auto start = high_resolution_clock::now();
     _record_count = _db.get_key_count(_query, _sort_column, _sort_order);
-    qDebug() << std::format("Got {} results for query: {}", _record_count, _query);
+    const auto end = high_resolution_clock::now();
+    const auto time = duration_cast<milliseconds>(end - start);
+    qDebug() << std::format("Got {} results in {} for query: {}", _record_count, time, _query);
 
     fetch(0, 40);
     endResetModel();
