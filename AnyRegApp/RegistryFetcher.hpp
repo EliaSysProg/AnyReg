@@ -17,10 +17,11 @@ public:
 public slots:
     void fetch_count(const QString& query,
                      anyreg::FindKeyStatement::SortColumn sort_column,
-                     anyreg::FindKeyStatement::SortOrder sort_order) const;
+                     anyreg::FindKeyStatement::SortOrder sort_order,
+                     const std::stop_token& stop_token) const;
 
 signals:
-    void count_fetched(size_t count) const;
+    void count_fetched(size_t count, const std::stop_token& stop_token) const;
 
 private:
     std::unique_ptr<QThread> _thread;

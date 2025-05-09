@@ -22,12 +22,13 @@ public:
     void set_sort_order(int sort_column, Qt::SortOrder sort_order);
 
 public slots:
-    void set_count(size_t count);
+    void set_count(size_t count, const std::stop_token& stop_token);
 
 signals:
     void request_count(const QString& query,
                        anyreg::FindKeyStatement::SortColumn sort_column,
-                       anyreg::FindKeyStatement::SortOrder sort_order) const;
+                       anyreg::FindKeyStatement::SortOrder sort_order,
+                       const std::stop_token& stop_token) const;
 
 private:
     void fetch(size_t offset, size_t limit) const;
@@ -38,5 +39,5 @@ private:
     mutable std::vector<GuiKeyEntry> _entries;
     mutable size_t _offset{};
     size_t _record_count{};
-    bool _fetching = false;
+    std::stop_source _fetch_stop_source;
 };

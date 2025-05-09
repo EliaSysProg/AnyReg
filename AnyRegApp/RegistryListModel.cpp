@@ -72,11 +72,11 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
 
 void RegistryListModel::set_query(const QString& query)
 {
-    if (_fetching) return;
-    _fetching = true;
+    _fetch_stop_source.request_stop();
+    _fetch_stop_source = {};
     _next_query = _current_query;
     _next_query.query = query;
-    request_count(_next_query.query, _next_query.sort_column, _next_query.sort_order);
+    request_count(_next_query.query, _next_query.sort_column, _next_query.sort_order, _fetch_stop_source.get_token());
 }
 
 void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrder sort_order)
@@ -109,13 +109,15 @@ void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrde
     endResetModel();
 }
 
-void RegistryListModel::set_count(const size_t count)
+void RegistryListModel::set_count(const size_t count, const std::stop_token& stop_token)
 {
+    if (stop_token.stop_requested())
+        return;
+
     beginResetModel();
     _record_count = count;
     _current_query = std::exchange(_next_query, {});
     _entries.clear();
-    _fetching = false;
     endResetModel();
 }
 

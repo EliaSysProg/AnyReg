@@ -22,8 +22,13 @@ RegistryFetcher::~RegistryFetcher()
 
 void RegistryFetcher::fetch_count(const QString& query,
                                   const anyreg::FindKeyStatement::SortColumn sort_column,
-                                  const anyreg::FindKeyStatement::SortOrder sort_order) const
+                                  const anyreg::FindKeyStatement::SortOrder sort_order,
+                                  const std::stop_token& stop_token) const
 {
     const auto count = _db.get_key_count(query.toStdString(), sort_column, sort_order);
-    emit count_fetched(count);
+
+    if (stop_token.stop_requested())
+        return;
+
+    emit count_fetched(count, stop_token);
 }
