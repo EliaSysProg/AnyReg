@@ -34,34 +34,37 @@ namespace anyreg
     }
 
     static std::string format_empty_query(const FindKeyStatement::SortColumn sort_column,
-                                                    const FindKeyStatement::SortOrder sort_order,
-                                                    const bool count_only)
+                                          const FindKeyStatement::SortOrder sort_order,
+                                          const bool count_only)
     {
         const auto selection = count_only ? "COUNT(*)" : "Name, Hive, Path, LastWriteTime";
-        return std::format("SELECT {} FROM RegistryKeys ORDER BY {} {}", selection, to_string(sort_column), to_string(sort_order));
+        const auto order = count_only ? "" : std::format("ORDER BY {} {}", to_string(sort_column), to_string(sort_order));
+        return std::format("SELECT {} FROM RegistryKeys {}", selection, order);
     }
 
     static std::string format_like_query(const std::string& query,
-                                                   const FindKeyStatement::SortColumn sort_column,
-                                                   const FindKeyStatement::SortOrder sort_order,
-                                                   const bool count_only)
+                                         const FindKeyStatement::SortColumn sort_column,
+                                         const FindKeyStatement::SortOrder sort_order,
+                                         const bool count_only)
     {
         const auto selection = count_only ? "COUNT(*)" : "Name, Hive, Path, LastWriteTime";
+        const auto order = count_only ? "" : std::format("ORDER BY {} {}", to_string(sort_column), to_string(sort_order));
         const auto escaped_query = sql::query::like_clause_escape(query, '|');
-        return std::format("SELECT {} FROM RegistryKeys WHERE Name LIKE '%{}%' escape '|' ORDER BY {} {}",
-                           selection, escaped_query, to_string(sort_column), to_string(sort_order));
+        return std::format("SELECT {} FROM RegistryKeys WHERE Name LIKE '%{}%' escape '|' {}",
+                           selection, escaped_query, order);
     }
 
     static std::string format_fts_query(const std::string& query,
-                                                  const FindKeyStatement::SortColumn sort_column,
-                                                  const FindKeyStatement::SortOrder sort_order,
-                                                  const bool count_only)
+                                        const FindKeyStatement::SortColumn sort_column,
+                                        const FindKeyStatement::SortOrder sort_order,
+                                        const bool count_only)
     {
         const auto selection = count_only ? "COUNT(*)" : "k.Name, k.Hive, k.Path, k.LastWriteTime";
+        const auto order = count_only ? "" : std::format("ORDER BY k.{} {}", to_string(sort_column), to_string(sort_order));
         const auto escaped_query = sql::query::fts_escape(query);
         return std::format(
-            "SELECT {} FROM RegistryKeys k INNER JOIN RegistryKeys_fts fts ON k.ID = fts.rowid WHERE RegistryKeys_fts MATCH '{}' ORDER BY k.{} {}",
-            selection, escaped_query, to_string(sort_column), to_string(sort_order));
+            "SELECT {} FROM RegistryKeys k INNER JOIN RegistryKeys_fts fts ON k.ID = fts.rowid WHERE RegistryKeys_fts MATCH '{}' {}",
+            selection, escaped_query, order);
     }
 
     static std::string format_query(const std::string& query,
@@ -85,12 +88,12 @@ namespace anyreg
             sql = format_fts_query(query, sort_column, sort_order, count_only);
         }
 
-        if (count_only)
+        if (!count_only)
         {
-            return sql;
+            sql = std::format("{} LIMIT {} OFFSET {}", sql, limit, offset);
         }
 
-        return std::format("{} LIMIT {} OFFSET {}", sql, limit, offset);
+        return sql;
     }
 
 

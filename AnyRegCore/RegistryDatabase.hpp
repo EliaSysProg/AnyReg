@@ -40,7 +40,7 @@ namespace anyreg
 
         FindKeyRange find_keys(const std::string& query,
                                FindKeyStatement::SortColumn sort_column,
-                               FindKeyStatement::SortOrder order = FindKeyStatement::SortOrder::ASCENDING,
+                               FindKeyStatement::SortOrder order,
                                const std::stop_token& stop_token = {});
 
         FindKeyRange find_keys(const std::string& query,

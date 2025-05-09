@@ -3,14 +3,10 @@
 
 using namespace std::chrono;
 
-// static constexpr size_t FETCH_SIZE = 20;
+static constexpr size_t FETCH_SIZE = 40;
 
 RegistryListModel::RegistryListModel(QObject* parent)
-    : QAbstractTableModel(parent),
-      _record_count(0),
-      _offset(0),
-      _sort_column(),
-      _sort_order()
+    : QAbstractTableModel(parent)
 {
 }
 
@@ -39,7 +35,7 @@ QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 
     if (row < _offset || row >= _offset + _entries.size())
     {
-        fetch(row >= 20 ? row - 20 : 0, 40);
+        fetch(row >= 20 ? row - 20 : 0, FETCH_SIZE);
     }
 
     const auto& [name, path, last_write_time] = _entries.at(row - _offset);
@@ -74,60 +70,66 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
     return QAbstractTableModel::headerData(section, orientation, role);
 }
 
-void RegistryListModel::set_query(const QString& query, const int sort_column, const Qt::SortOrder sort_order)
+void RegistryListModel::set_query(const QString& query)
 {
-    beginResetModel();
+    if (_fetching) return;
+    _fetching = true;
+    _next_query = _current_query;
+    _next_query.query = query;
+    request_count(_next_query.query, _next_query.sort_column, _next_query.sort_order);
+}
 
+void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrder sort_order)
+{
+    anyreg::FindKeyStatement::SortColumn column;
     switch (sort_column)
     {
     case 0:
-        _sort_column = anyreg::FindKeyStatement::SortColumn::NAME;
+        column = anyreg::FindKeyStatement::SortColumn::NAME;
         break;
     case 1:
-        _sort_column = anyreg::FindKeyStatement::SortColumn::PATH;
+        column = anyreg::FindKeyStatement::SortColumn::PATH;
         break;
     case 2:
-        _sort_column = anyreg::FindKeyStatement::SortColumn::LAST_WRITE_TIME;
+        column = anyreg::FindKeyStatement::SortColumn::LAST_WRITE_TIME;
         break;
     default:
-        _sort_column = anyreg::FindKeyStatement::SortColumn::NAME;
+        column = anyreg::FindKeyStatement::SortColumn::NAME;
         break;
     }
 
-    _sort_order = sort_order == Qt::AscendingOrder
-                      ? anyreg::FindKeyStatement::SortOrder::ASCENDING
-                      : anyreg::FindKeyStatement::SortOrder::DESCENDING;
+    const auto order = sort_order == Qt::AscendingOrder
+                           ? anyreg::FindKeyStatement::SortOrder::ASCENDING
+                           : anyreg::FindKeyStatement::SortOrder::DESCENDING;
 
-    _query = query.toStdString();
-    const auto start = high_resolution_clock::now();
-    _record_count = _db.get_key_count(_query, _sort_column, _sort_order);
-    const auto end = high_resolution_clock::now();
-    const auto time = duration_cast<milliseconds>(end - start);
-    qDebug() << std::format("Got {} results in {} for query: {}", _record_count, time, _query);
-
-    fetch(0, 40);
+    beginResetModel();
+    _current_query.sort_column = column;
+    _current_query.sort_order = order;
+    _entries.clear();
     endResetModel();
 }
 
-RegistryListModel::QRegistryKeyEntry::QRegistryKeyEntry(QString name, QString path, QDateTime last_write_time)
-    : name(std::move(name)),
-      path(std::move(path)),
-      last_write_time(std::move(last_write_time))
+void RegistryListModel::set_count(const size_t count)
 {
-}
-
-RegistryListModel::QRegistryKeyEntry::QRegistryKeyEntry(const anyreg::RegistryKeyView& key)
-    : name(QString::fromLocal8Bit(key.name)),
-      path(QString::fromLocal8Bit(key.get_absolute_path())),
-      last_write_time(QDateTime::fromStdTimePoint(time_point_cast<milliseconds>(clock_cast<system_clock>(key.last_write_time))))
-{
+    beginResetModel();
+    _record_count = count;
+    _current_query = std::exchange(_next_query, {});
+    _entries.clear();
+    _fetching = false;
+    endResetModel();
 }
 
 void RegistryListModel::fetch(const size_t offset, const size_t limit) const
 {
+    qDebug() << std::format("Fetching {}-{} from {}", offset, offset + limit, _current_query.query.toStdString());
     _offset = offset;
     _entries.clear();
-    const auto range = _db.find_keys(_query, _sort_column, _sort_order, offset, limit);
+    const auto range = _db.find_keys(_current_query.query.toStdString(),
+                                     _current_query.sort_column,
+                                     _current_query.sort_order,
+                                     offset,
+                                     limit);
+
     for (const auto& key : range)
     {
         _entries.emplace_back(key);

@@ -1,5 +1,7 @@
 #pragma once
 
+#include "GuiKeyEntry.hpp"
+#include "GuiQuery.hpp"
 #include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <QAbstractTableModel>
@@ -16,27 +18,25 @@ public:
     [[nodiscard]] QVariant data(const QModelIndex& index, int role = Qt::DisplayRole) const override;
     [[nodiscard]] QVariant headerData(int section, Qt::Orientation orientation, int role = Qt::DisplayRole) const override;
 
-    void set_query(const QString& query, int sort_column, Qt::SortOrder sort_order);
+    void set_query(const QString& query);
+    void set_sort_order(int sort_column, Qt::SortOrder sort_order);
+
+public slots:
+    void set_count(size_t count);
+
+signals:
+    void request_count(const QString& query,
+                       anyreg::FindKeyStatement::SortColumn sort_column,
+                       anyreg::FindKeyStatement::SortOrder sort_order) const;
 
 private:
-    struct QRegistryKeyEntry
-    {
-        QString name;
-        QString path;
-        QDateTime last_write_time;
-
-        QRegistryKeyEntry(QString name, QString path, QDateTime last_write_time);
-        QRegistryKeyEntry(const anyreg::RegistryKeyView& key);
-    };
-
     void fetch(size_t offset, size_t limit) const;
-    
-    anyreg::RegistryDatabase _db;
-    std::string _query;
-    size_t _record_count;
-    mutable std::vector<QRegistryKeyEntry> _entries;
-    mutable size_t _offset;
-    anyreg::FindKeyStatement::SortColumn _sort_column;
-    anyreg::FindKeyStatement::SortOrder _sort_order;
-};
 
+    anyreg::RegistryDatabase _db;
+    GuiQuery _current_query{};
+    GuiQuery _next_query{};
+    mutable std::vector<GuiKeyEntry> _entries;
+    mutable size_t _offset{};
+    size_t _record_count{};
+    bool _fetching = false;
+};

@@ -10,6 +10,7 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 
     installEventFilter(this);
     _model = new RegistryListModel;
+    _fetcher = new RegistryFetcher;
     _ui.resultList->setModel(_model);
 
     _ui.searchBox->setFocus();
@@ -19,22 +20,20 @@ AnyRegApp::AnyRegApp(QWidget* parent)
     bold_font.setBold(true);
     _ui.resultList->horizontalHeader()->setFont(bold_font);
 
-    set_table_query("");
+    connect(_ui.searchBox, &QLineEdit::textChanged, _model, &RegistryListModel::set_query);
+    connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, _model, &RegistryListModel::set_sort_order);
+    connect(_model, &RegistryListModel::request_count, _fetcher, &RegistryFetcher::fetch_count, Qt::QueuedConnection);
+    connect(_fetcher, &RegistryFetcher::count_fetched, _model, &RegistryListModel::set_count, Qt::QueuedConnection);
 
-    connect(_ui.searchBox, &QLineEdit::textChanged, this, &AnyRegApp::set_table_query);
-    connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, this, &AnyRegApp::set_table_sort);
+    set_table_query("");
 }
 
 void AnyRegApp::set_table_query(const QString& query)
 {
     const auto column_index = _ui.resultList->horizontalHeader()->sortIndicatorSection();
     const auto sort_order = _ui.resultList->horizontalHeader()->sortIndicatorOrder();
-    _model->set_query(query, column_index, sort_order);
-}
-
-void AnyRegApp::set_table_sort(const int index, const Qt::SortOrder order)
-{
-    _model->set_query(_ui.searchBox->text(), index, order);
+    _model->set_sort_order(column_index, sort_order);
+    _model->set_query(query);
 }
 
 bool AnyRegApp::eventFilter(QObject* obj, QEvent* event)

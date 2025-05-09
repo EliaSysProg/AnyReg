@@ -1,5 +1,6 @@
 #pragma once
 
+#include "RegistryFetcher.hpp"
 #include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
 
@@ -14,11 +15,11 @@ public:
 
 private slots:
     void set_table_query(const QString& query);
-    void set_table_sort(int index, Qt::SortOrder order);
 
 private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     Ui::AnyRegAppClass _ui;
     RegistryListModel* _model = nullptr;
+    RegistryFetcher* _fetcher = nullptr;
 };
