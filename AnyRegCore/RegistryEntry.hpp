@@ -11,6 +11,47 @@ namespace anyreg
 
     using RegistryKeyTime = std::chrono::file_time<std::chrono::file_clock::duration>;
 
+    enum class SortColumn : uint8_t
+    {
+        NAME,
+        PATH,
+        LAST_WRITE_TIME,
+    };
+
+    enum class SortOrder : uint8_t
+    {
+        ASCENDING,
+        DESCENDING,
+    };
+
+    constexpr std::string to_string(const SortColumn sort_column)
+    {
+        switch (sort_column)
+        {
+        case SortColumn::NAME:
+            return "Name";
+        case SortColumn::PATH:
+            return "Path";
+        case SortColumn::LAST_WRITE_TIME:
+            return "LastWriteTime";
+        default:
+            throw std::invalid_argument("Invalid SortColumn value");
+        }
+    }
+
+    constexpr std::string to_string(const SortOrder sort_order)
+    {
+        switch (sort_order)
+        {
+        case SortOrder::ASCENDING:
+            return "ASC";
+        case SortOrder::DESCENDING:
+            return "DESC";
+        default:
+            throw std::invalid_argument("Invalid SortOrder value");
+        }
+    }
+
     enum class RegistryValueType : DWORD
     {
         BINARY = REG_BINARY,

@@ -1,14 +1,16 @@
 ﻿#pragma once
 
-#include <filesystem>
-#include <stop_token>
-#include <string>
-#include <span>
-
-#include "FindKeyStatement.hpp"
+#include "EmptyStatement.hpp"
+#include "FtsStatement.hpp"
 #include "InsertKeyStatement.hpp"
+#include "LikeStatement.hpp"
 #include "RegistryEntry.hpp"
 #include "SQLite3Wrapper/SQLite3Wrapper.hpp"
+
+#include <filesystem>
+#include <span>
+#include <stop_token>
+#include <string>
 
 namespace anyreg
 {
@@ -24,34 +26,9 @@ namespace anyreg
         void insert_key(const RegistryKeyEntry& key);
         void insert_value(const RegistryValueEntry& value);
 
-        class FindKeyRange
-        {
-        public:
-            FindKeyRange() = default;
-            explicit FindKeyRange(std::shared_ptr<FindKeyStatement> statement);
-            [[nodiscard]] FindKeyStatement::iterator begin() const;
-            [[nodiscard]] FindKeyStatement::iterator end() const;
-
-        private:
-            std::shared_ptr<FindKeyStatement> _statement = nullptr;
-        };
-
-        FindKeyRange find_keys(const std::string& query, const std::stop_token& stop_token = {});
-
-        FindKeyRange find_keys(const std::string& query,
-                               FindKeyStatement::SortColumn sort_column,
-                               FindKeyStatement::SortOrder order,
-                               const std::stop_token& stop_token = {});
-
-        FindKeyRange find_keys(const std::string& query,
-                               FindKeyStatement::SortColumn sort_column,
-                               FindKeyStatement::SortOrder order,
-                               size_t offset,
-                               size_t limit) const;
-
-        size_t get_key_count(const std::string& query,
-                             FindKeyStatement::SortColumn sort_column,
-                             FindKeyStatement::SortOrder order) const;
+        [[nodiscard]] EmptyStatement get_empty_query(SortColumn sort_column, SortOrder sort_order) const;
+        [[nodiscard]] LikeStatement get_like_query(SortColumn sort_column, SortOrder sort_order) const;
+        [[nodiscard]] FtsStatement get_fts_query(SortColumn sort_column, SortOrder sort_order) const;
 
     private:
         static sql::DatabaseConnection connect(int flags);

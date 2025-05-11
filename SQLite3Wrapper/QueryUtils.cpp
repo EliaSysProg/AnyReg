@@ -27,7 +27,7 @@ namespace sql::query
         return result;
     }
 
-    std::string like_clause_escape(const std::string& user_query, char escape_char)
+    std::string like_clause_escape(const std::string& user_query, const char escape_char)
     {
         constexpr std::string_view escape_chars = "%_[]";
         std::string result;

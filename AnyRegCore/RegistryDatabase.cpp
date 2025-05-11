@@ -121,54 +121,19 @@ namespace anyreg
         UNREFERENCED_PARAMETER(value);
     }
 
-    RegistryDatabase::FindKeyRange::FindKeyRange(std::shared_ptr<FindKeyStatement> statement)
-        : _statement(std::move(statement))
+    EmptyStatement RegistryDatabase::get_empty_query(const SortColumn sort_column, const SortOrder sort_order) const
     {
+        return {_db, sort_column, sort_order};
     }
 
-    FindKeyStatement::iterator RegistryDatabase::FindKeyRange::begin() const
+    LikeStatement RegistryDatabase::get_like_query(const SortColumn sort_column, const SortOrder sort_order) const
     {
-        return _statement ? _statement->begin() : FindKeyStatement::iterator{};
+        return {_db, sort_column, sort_order};
     }
 
-    FindKeyStatement::iterator RegistryDatabase::FindKeyRange::end() const
+    FtsStatement RegistryDatabase::get_fts_query(const SortColumn sort_column, const SortOrder sort_order) const
     {
-        return _statement ? _statement->end() : FindKeyStatement::iterator{};
-    }
-
-    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query, const std::stop_token& stop_token)
-    {
-        return find_keys(query, FindKeyStatement::SortColumn::NAME, FindKeyStatement::SortOrder::ASCENDING, stop_token);
-    }
-
-    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
-                                                               FindKeyStatement::SortColumn sort_column,
-                                                               FindKeyStatement::SortOrder order,
-                                                               const std::stop_token& stop_token)
-    {
-        if (stop_token.stop_requested())
-        {
-            OutputDebugStringW(L"Request to stop find operation\r\n");
-            return {};
-        }
-
-        return FindKeyRange{std::make_shared<FindKeyStatement>(_db, query, sort_column, order)};
-    }
-
-    RegistryDatabase::FindKeyRange RegistryDatabase::find_keys(const std::string& query,
-                                                               FindKeyStatement::SortColumn sort_column,
-                                                               FindKeyStatement::SortOrder order,
-                                                               size_t offset,
-                                                               size_t limit) const
-    {
-        return FindKeyRange{std::make_shared<FindKeyStatement>(_db, query, sort_column, order, offset, limit)};
-    }
-
-    size_t RegistryDatabase::get_key_count(const std::string& query,
-                                           const FindKeyStatement::SortColumn sort_column,
-                                           const FindKeyStatement::SortOrder order) const
-    {
-        return FindKeyStatement::get_count(_db, query, sort_column, order);
+        return {_db, sort_column, sort_order};
     }
 
     sql::DatabaseConnection RegistryDatabase::connect(const int flags)

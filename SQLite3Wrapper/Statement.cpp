@@ -112,4 +112,17 @@ namespace sql
     {
         return sqlite3_column_int64(_sqlite3_stmt.get(), index);
     }
+
+    std::string Statement::get_sql() const
+    {
+        const auto sql_str = sqlite3_expanded_sql(_sqlite3_stmt.get());
+        if (!sql_str)
+        {
+            throw StatementError("Failed to get SQL string");
+        }
+
+        std::unique_ptr<char, decltype([](char* ptr) { sqlite3_free(ptr); })> sql_str_ptr(sql_str);
+
+        return sql_str;
+    }
 }

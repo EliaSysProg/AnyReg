@@ -33,6 +33,8 @@ namespace sql
         [[nodiscard]] int32_t get_int32(int index) const;
         [[nodiscard]] int64_t get_int64(int index) const;
 
+        [[nodiscard]] std::string get_sql() const;
+
     private:
         std::unique_ptr<sqlite3_stmt, SQLite3StatementDeleter> _sqlite3_stmt;
     };
