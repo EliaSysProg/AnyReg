@@ -26,14 +26,17 @@ public slots:
 
 signals:
     void request_count(const QString& query,
-                       anyreg::FindKeyStatement::SortColumn sort_column,
-                       anyreg::FindKeyStatement::SortOrder sort_order,
+                       anyreg::SortColumn sort_column,
+                       anyreg::SortOrder sort_order,
                        const std::stop_token& stop_token) const;
 
 private:
     void fetch(size_t offset, size_t limit) const;
 
     anyreg::RegistryDatabase _db;
+    mutable anyreg::EmptyStatement _empty_statement;
+    mutable anyreg::LikeStatement _like_statement;
+    mutable anyreg::FtsStatement _fts_statement;
     GuiQuery _current_query{};
     GuiQuery _next_query{};
     mutable std::vector<GuiKeyEntry> _entries;

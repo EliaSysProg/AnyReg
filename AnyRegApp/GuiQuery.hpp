@@ -1,10 +1,10 @@
 ﻿#pragma once
 
-#include "AnyRegCore/FindKeyStatement.hpp"
+#include "AnyRegCore/RegistryEntry.hpp"
 
 struct GuiQuery
 {
     QString query;
-    anyreg::FindKeyStatement::SortColumn sort_column;
-    anyreg::FindKeyStatement::SortOrder sort_order;
+    anyreg::SortColumn sort_column;
+    anyreg::SortOrder sort_order;
 };

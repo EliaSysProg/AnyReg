@@ -1,6 +1,5 @@
 #pragma once
 
-#include "AnyRegCore/FindKeyStatement.hpp"
 #include "AnyRegCore/RegistryDatabase.hpp"
 #include "AnyRegCore/RegistryEntry.hpp"
 
@@ -16,8 +15,8 @@ public:
 
 public slots:
     void fetch_count(const QString& query,
-                     anyreg::FindKeyStatement::SortColumn sort_column,
-                     anyreg::FindKeyStatement::SortOrder sort_order,
+                     anyreg::SortColumn sort_column,
+                     anyreg::SortOrder sort_order,
                      const std::stop_token& stop_token) const;
 
 signals:
