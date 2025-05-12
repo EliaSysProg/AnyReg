@@ -1,41 +1,60 @@
 ﻿#pragma once
 
-#include "EmptyStatement.hpp"
-#include "FtsStatement.hpp"
-#include "InsertKeyStatement.hpp"
-#include "LikeStatement.hpp"
 #include "RegistryEntry.hpp"
-#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
+#include "RegistryRecordRange.hpp"
 
 #include <filesystem>
-#include <span>
-#include <stop_token>
-#include <string>
+
+namespace sql
+{
+    class DatabaseConnection;
+    class ScopedTransaction;
+}
 
 namespace anyreg
 {
+    enum class SortColumn : uint8_t
+    {
+        NAME,
+        PATH,
+        LAST_WRITE_TIME,
+    };
+
+    enum class SortOrder : uint8_t
+    {
+        ASCENDING,
+        DESCENDING,
+    };
+
+    class InsertKeyStatement;
+
     class RegistryDatabase final
     {
     public:
-        explicit RegistryDatabase(int flags = SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE);
+        static RegistryDatabase create();
+        static RegistryDatabase open_read();
+        static RegistryDatabase open_write();
 
-        void index(std::span<const HKEY> hives, const std::stop_token& stop_token = {});
+        ~RegistryDatabase();
+
         void save(const std::filesystem::path& filename) const;
         void load(const std::filesystem::path& filename);
 
-        void insert_key(const RegistryKeyEntry& key);
-        void insert_value(const RegistryValueEntry& value);
+        sql::ScopedTransaction* begin_transaction();
+        void end_transaction(sql::ScopedTransaction* transaction);
+        void insert_key(const RegistryKeyView& key);
 
-        [[nodiscard]] EmptyStatement get_empty_query(SortColumn sort_column, SortOrder sort_order) const;
-        [[nodiscard]] LikeStatement get_like_query(SortColumn sort_column, SortOrder sort_order) const;
-        [[nodiscard]] FtsStatement get_fts_query(SortColumn sort_column, SortOrder sort_order) const;
+        [[nodiscard]] size_t count_keys(std::string_view query) const;
+        [[nodiscard]] sql::Statement* start_find_operation(SortColumn column, SortOrder order) const;
+        void end_find_operation(sql::Statement* find_operation) const;
+        void bind_find_operation(sql::Statement* statement, std::string_view query) const;
+        void bind_find_operation(sql::Statement* statement, size_t offset, size_t count) const;
+        void reset_find_operation(sql::Statement* statement) const;
 
     private:
-        static sql::DatabaseConnection connect(int flags);
+        explicit RegistryDatabase(std::unique_ptr<sql::DatabaseConnection> db);
 
-        void index_hive(HKEY hive, const std::stop_token& stop_token = {});
-
-        sql::DatabaseConnection _db;
-        InsertKeyStatement _insert_key_statement;
+        std::unique_ptr<sql::DatabaseConnection> _db;
+        std::unique_ptr<InsertKeyStatement> _insert_key_statement;
     };
 }

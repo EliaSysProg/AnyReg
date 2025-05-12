@@ -34,6 +34,7 @@
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
     <ClCompile Include="AnyRegCli.cpp" />
+    <ClCompile Include="registry.c" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AnyRegCore\AnyRegCore.vcxproj">

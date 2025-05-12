@@ -7,200 +7,207 @@
 #include <algorithm>
 
 #include "Registry.hpp"
-#include "SQLite3Wrapper/ScopedTransaction.hpp"
+#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
 
 namespace anyreg
 {
-    constexpr static bool is_predefined_hkey(const HKEY hkey)
-    {
-        static const auto HIVES = {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CLASSES_ROOT, HKEY_USERS, HKEY_CURRENT_CONFIG};
-        return std::ranges::any_of(HIVES, [&](const auto hive) { return hkey == hive; });
-    }
+    static constexpr int DEFAULT_FLAGS = SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_URI;
+    static constexpr auto DATABASE_NAME = "file:AnyRegDb?mode=memory&cache=shared";
+    static constexpr auto DATABASE_FILE_NAME = R"(C:\Windows\Temp\AnyReg.db)";
 
-    RegistryDatabase::RegistryDatabase(const int flags)
-        : _db(connect(flags | SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_MEMORY)),
-          _insert_key_statement(_db)
+    constexpr std::string column_name(const SortColumn sort_column)
     {
-        const std::filesystem::path path = L"AnyReg.db";
-        if (std::filesystem::exists(path))
+        switch (sort_column)
         {
-            load(path);
+        case SortColumn::NAME:
+            return "Name";
+        case SortColumn::PATH:
+            return "Path";
+        case SortColumn::LAST_WRITE_TIME:
+            return "LastWriteTime";
+        default:
+            throw std::invalid_argument("Invalid SortColumn value");
         }
     }
 
-    void RegistryDatabase::index(const std::span<const HKEY> hives, const std::stop_token&)
+    constexpr std::string order_name(const SortOrder sort_order)
     {
-        for (const auto hive : hives)
+        switch (sort_order)
         {
-            index_hive(hive);
+        case SortOrder::ASCENDING:
+            return "ASC";
+        case SortOrder::DESCENDING:
+            return "DESC";
+        default:
+            throw std::invalid_argument("Invalid SortOrder value");
         }
     }
 
-    void RegistryDatabase::save(const std::filesystem::path& filename) const
+    class InsertKeyStatement final
     {
-        sql::database::backup(_db, sql::DatabaseConnection(filename.string()));
-    }
-
-    void RegistryDatabase::load(const std::filesystem::path& filename)
-    {
-        sql::database::backup(sql::DatabaseConnection(filename.string()), _db);
-    }
-
-    void RegistryDatabase::index_hive(const HKEY hive, const std::stop_token& stop_token)
-    {
-        if (!is_predefined_hkey(hive))
+    public:
+        explicit InsertKeyStatement(const sql::DatabaseConnection& db)
+            : _statement(db,
+                         R"(
+INSERT INTO RegistryKeys (Name, Hive, Path, LastWriteTime)
+    VALUES (?, ?, ?, ?)
+ON CONFLICT(Hive, Name, Path) DO UPDATE
+    SET LastWriteTime = excluded.LastWriteTime
+    WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;)")
         {
-            throw std::invalid_argument("hive must be a predefined key");
         }
 
-        std::deque<std::string> keys_to_process;
-        keys_to_process.emplace_back("");
-
-        RegistryKeyEntry key_entry;
-        RegistryValueEntry value_entry;
-        std::string temp_name;
-
-        size_t key_count = 0;
-
-        while (!keys_to_process.empty())
+        void insert(const RegistryKeyView& key)
         {
-            if (stop_token.stop_requested())
-            {
-                OutputDebugStringW(L"Request to stop indexing hive at the middle of index_hive\r\n");
-                return;
-            }
-
-            auto current_key = std::move(keys_to_process.front());
-            keys_to_process.pop_front();
-
-            RegistryKey key;
-
-            try
-            {
-                key = RegistryKey(hive, current_key, KEY_READ);
-            }
-            catch (const std::system_error& e)
-            {
-                const auto error_code = e.code().value();
-                if (error_code & (ERROR_ACCESS_DENIED | ERROR_PATH_NOT_FOUND))
-                {
-                    continue;
-                }
-            }
-
-            // Enumerate values
-            for (DWORD i = 0; key.get_value(i, value_entry.name, value_entry.type); ++i)
-            {
-                value_entry.path = current_key;
-                insert_value(value_entry);
-            }
-
-            // Enumerate subkeys
-            for (DWORD i = 0; key.get_sub_key(i, key_entry.name, key_entry.last_write_time); ++i)
-            {
-                key_entry.path = current_key;
-                key_entry.hive = hive;
-                insert_key(key_entry);
-                keys_to_process.push_back(std::filesystem::path(key_entry.path).append(key_entry.name).string());
-            }
-
-            ++key_count;
-        }
-        OutputDebugStringW((L"Finished indexing hive: " + std::to_wstring(key_count) + L"\r\n").c_str());
-    }
-
-    void RegistryDatabase::insert_key(const RegistryKeyEntry& key)
-    {
-        _insert_key_statement.bind(key);
-        _insert_key_statement.execute();
-        _insert_key_statement.reset_and_clear();
-    }
-
-    void RegistryDatabase::insert_value(const RegistryValueEntry& value)
-    {
-        UNREFERENCED_PARAMETER(value);
-    }
-
-    EmptyStatement RegistryDatabase::get_empty_query(const SortColumn sort_column, const SortOrder sort_order) const
-    {
-        return {_db, sort_column, sort_order};
-    }
-
-    LikeStatement RegistryDatabase::get_like_query(const SortColumn sort_column, const SortOrder sort_order) const
-    {
-        return {_db, sort_column, sort_order};
-    }
-
-    FtsStatement RegistryDatabase::get_fts_query(const SortColumn sort_column, const SortOrder sort_order) const
-    {
-        return {_db, sort_column, sort_order};
-    }
-
-    sql::DatabaseConnection RegistryDatabase::connect(const int flags)
-    {
-        sql::DatabaseConnection db("AnyRegDb", flags);
-
-        if (flags & SQLITE_OPEN_READONLY)
-        {
-            return db;
+            _statement.bind_text(1, key.name);
+            _statement.bind_int64(2, static_cast<int64_t>(key.hive));
+            _statement.bind_text(3, key.path);
+            _statement.bind_int64(4, key.last_write_time.time_since_epoch().count());
         }
 
-        db.execute(R"(
+    private:
+        sql::Statement _statement;
+    };
+
+    RegistryDatabase RegistryDatabase::create()
+    {
+        auto db = std::make_unique<sql::DatabaseConnection>(DATABASE_NAME, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | DEFAULT_FLAGS);
+        if (std::filesystem::exists(DATABASE_FILE_NAME))
+        {
+            sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), *db);
+        }
+
+        db->execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
     Hive INTEGER NOT NULL,
     Path TEXT NOT NULL,
     LastWriteTime INTEGER,
-    UNIQUE(Name, Path)
+    UNIQUE(Hive, Name, Path)
 );)");
 
         // Create FTS5 virtual table
-        db.execute(R"(
-CREATE VIRTUAL TABLE IF NOT EXISTS RegistryKeys_fts USING fts5(
-    Name,
-    content='RegistryKeys',
-    content_rowid='ID',
-    tokenize='trigram');)");
-
+        // TODO: Sync with current RegistryKeys table
+        db->execute(R"(CREATE VIRTUAL TABLE IF NOT EXISTS RegistryKeys_fts USING fts5(Name, content='RegistryKeys', tokenize='trigram');)");
 
         // Create triggers to keep FTS table in sync
-        db.execute(R"(
+        db->execute(R"(
 CREATE TRIGGER IF NOT EXISTS RegistryKeys_ai AFTER INSERT ON RegistryKeys BEGIN
-    INSERT INTO RegistryKeys_fts(rowid, Name) 
-    VALUES (new.ID, new.Name);
+    INSERT INTO RegistryKeys_fts(rowid, Name) VALUES (new.rowid, new.Name);
 END;)");
 
-        db.execute(R"(
+        db->execute(R"(
 CREATE TRIGGER IF NOT EXISTS RegistryKeys_ad AFTER DELETE ON RegistryKeys BEGIN
-    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) 
-    VALUES('delete', old.ID, old.Name);
+    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) VALUES('delete', old.rowid, old.Name);
 END;)");
 
-        db.execute(R"(
+        db->execute(R"(
 CREATE TRIGGER IF NOT EXISTS RegistryKeys_au AFTER UPDATE ON RegistryKeys BEGIN
-    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) 
-    VALUES('delete', old.ID, old.Name);
-    INSERT INTO RegistryKeys_fts(rowid, Name) 
-    VALUES (new.ID, new.Name);
+    INSERT INTO RegistryKeys_fts(RegistryKeys_fts, rowid, Name) VALUES('delete', old.rowid, old.Name);
+    INSERT INTO RegistryKeys_fts(rowid, Name) VALUES (new.rowid, new.Name);
 END;)");
 
-        db.execute(R"(
-CREATE TABLE IF NOT EXISTS RegistryValues (
-    ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    Name TEXT NOT NULL,
-    Hive INTEGER NOT NULL,
-    Path TEXT NOT NULL,
-    Type INTEGER,
-    UNIQUE(Name, Path)
-);)");
+        db->execute("PRAGMA journal_mode = WAL");
 
-        db.execute("PRAGMA journal_mode = WAL");
+        db->execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_name ON RegistryKeys(Name)");
+        db->execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_path ON RegistryKeys(Path)");
+        db->execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
 
-        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_name ON RegistryKeys(Name)");
-        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_path ON RegistryKeys(Path)");
-        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
+        return RegistryDatabase{std::move(db)};
+    }
 
-        return db;
+    RegistryDatabase RegistryDatabase::open_read()
+    {
+        auto db = std::make_unique<sql::DatabaseConnection>(DATABASE_NAME, SQLITE_OPEN_READONLY | DEFAULT_FLAGS);
+        return RegistryDatabase{std::move(db)};
+    }
+
+    RegistryDatabase RegistryDatabase::open_write()
+    {
+        auto db = std::make_unique<sql::DatabaseConnection>(DATABASE_NAME, DEFAULT_FLAGS);
+        if (!sqlite3_db_readonly(db->get(), DATABASE_NAME))
+        {
+            throw sql::DatabaseError("Database is not read-only");
+        }
+
+        return RegistryDatabase{std::move(db)};
+    }
+
+    RegistryDatabase::~RegistryDatabase() = default;
+
+    void RegistryDatabase::save(const std::filesystem::path& filename) const
+    {
+        sql::database::backup(*_db, sql::DatabaseConnection(filename.string()));
+    }
+
+    void RegistryDatabase::load(const std::filesystem::path& filename)
+    {
+        sql::database::backup(sql::DatabaseConnection(filename.string()), *_db);
+    }
+
+    sql::ScopedTransaction* RegistryDatabase::begin_transaction()
+    {
+        return std::make_unique<sql::ScopedTransaction>(*_db).release();
+    }
+
+    void RegistryDatabase::end_transaction(sql::ScopedTransaction* transaction)
+    {
+        auto scoped_transaction = std::unique_ptr<sql::ScopedTransaction>(transaction);
+    }
+
+    void RegistryDatabase::insert_key(const RegistryKeyView& key)
+    {
+        _insert_key_statement->insert(key);
+    }
+
+    size_t RegistryDatabase::count_keys(const std::string_view query) const
+    {
+        const auto escaped_query = sql::query::fts_escape(query);
+        sql::Statement count_statement(*_db, "SELECT COUNT(*) FROM RegistryKeys_fts WHERE RegistryKeys_fts MATCH ?1");
+        count_statement.bind_text(1, escaped_query);
+        if (!count_statement.step())
+        {
+            throw sql::StatementError(std::format("Failed to execute count statement: {}", count_statement.get_sql()));
+        }
+
+        return static_cast<size_t>(count_statement.get_int64(0));
+    }
+
+    sql::Statement* RegistryDatabase::start_find_operation(const SortColumn column, const SortOrder order) const
+    {
+        auto statement = std::make_unique<sql::Statement>(*_db, std::format(R"(
+SELECT k.Name, k.Hive, k.Path, k.LastWriteTime
+    FROM RegistryKeys k
+INNER JOIN RegistryKeys_fts fts ON k.rowid = fts.rowid
+    WHERE RegistryKeys_fts MATCH ?1
+ORDER BY k.{} {} LIMIT ?3 OFFSET ?2;)", column_name(column), order_name(order)));
+
+        return statement.release();
+    }
+
+    void RegistryDatabase::end_find_operation(sql::Statement* find_operation) const
+    {
+        auto statement = std::unique_ptr<sql::Statement>(find_operation);
+    }
+
+    void RegistryDatabase::bind_find_operation(sql::Statement* statement, const std::string_view query) const
+    {
+        statement->bind_text(1, sql::query::fts_escape(query), true);
+    }
+
+    void RegistryDatabase::bind_find_operation(sql::Statement* statement, const size_t offset, const size_t count) const
+    {
+        statement->bind_int64(2, static_cast<int64_t>(offset));
+        statement->bind_int64(3, static_cast<int64_t>(count));
+    }
+
+    void RegistryDatabase::reset_find_operation(sql::Statement* statement) const
+    {
+        statement->reset();
+    }
+
+    RegistryDatabase::RegistryDatabase(std::unique_ptr<sql::DatabaseConnection> db)
+        : _db(std::move(db))
+    {
     }
 }

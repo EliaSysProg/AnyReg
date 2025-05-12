@@ -30,11 +30,11 @@ namespace sql
         _sqlite3_stmt.reset(stmt);
     }
 
-    void Statement::bind_text(const int index, const std::string& value, const bool take_copy)
+    void Statement::bind_text(const int index, const std::string_view value, const bool take_copy)
     {
         const auto error_code = sqlite3_bind_text(_sqlite3_stmt.get(),
                                                   index,
-                                                  value.c_str(),
+                                                  value.data(),
                                                   static_cast<int>(value.size()),
                                                   take_copy ? SQLITE_TRANSIENT : SQLITE_STATIC);
         if (error_code != SQLITE_OK)

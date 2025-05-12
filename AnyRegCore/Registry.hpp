@@ -2,31 +2,20 @@
 
 #include "RegistryEntry.hpp"
 
-#include <string>
+#include <Windows.h>
+
+#include <functional>
+#include <string_view>
+#include <stop_token>
 
 namespace anyreg
 {
-    class RegistryKey
-    {
-    public:
-        RegistryKey() = default;
-        explicit RegistryKey(HKEY root, const std::string& path, REGSAM access = KEY_READ);
-        ~RegistryKey();
+    void scan_registry(HKEY hive,
+                       const std::function<void(const RegistryKeyView&)>& callback,
+                       const std::stop_token& stop_token = {});
 
-        RegistryKey(RegistryKey&& other) noexcept;
-        RegistryKey& operator=(RegistryKey&& other) noexcept;
-
-        RegistryKey(const RegistryKey& other) = delete;
-        RegistryKey& operator=(const RegistryKey& other) = delete;
-
-        [[nodiscard]] DWORD sub_key_count() const;
-
-        [[nodiscard]] bool get_value(DWORD index, std::string& name, RegistryValueType& type) const;
-        [[nodiscard]] bool get_sub_key(DWORD index, std::string& name, RegistryKeyTime& last_write_time) const;
-
-        friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
-
-    private:
-        HKEY _key{};
-    };
+    void scan_registry(HKEY hive,
+                       std::string_view path,
+                       const std::function<void(const RegistryKeyView&)>& callback,
+                       const std::stop_token& stop_token = {});
 }

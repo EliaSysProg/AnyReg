@@ -2,7 +2,7 @@
 
 namespace sql::query
 {
-    std::string fts_escape(const std::string& user_query)
+    std::string fts_escape(const std::string_view user_query)
     {
         std::string result;
         result.reserve(user_query.size() + 2);
@@ -11,7 +11,6 @@ namespace sql::query
         {
             switch (c)
             {
-            case '\'':
             case '\"':
                 result += c;
                 break;
@@ -27,7 +26,7 @@ namespace sql::query
         return result;
     }
 
-    std::string like_clause_escape(const std::string& user_query, const char escape_char)
+    std::string like_clause_escape(const std::string_view user_query, const char escape_char)
     {
         constexpr std::string_view escape_chars = "%_[]";
         std::string result;

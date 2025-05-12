@@ -20,7 +20,7 @@ namespace sql
     public:
         Statement(const DatabaseConnection& db, const std::string& sql);
 
-        void bind_text(int index, const std::string& value, bool take_copy = false);
+        void bind_text(int index, std::string_view value, bool take_copy = false);
         void bind_int64(int index, int64_t value);
         void bind_int(int index, int value);
 

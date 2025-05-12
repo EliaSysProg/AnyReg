@@ -1,5 +1,9 @@
 ﻿#include "RegistryRecordIterator.hpp"
 
+#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
+
+#include <Windows.h>
+
 namespace anyreg
 {
     RegistryRecordIterator::RegistryRecordIterator(sql::Statement* statement)
@@ -29,9 +33,9 @@ namespace anyreg
         {
             _current = RegistryKeyView{
                 .name = _statement->get_text(0),
-                .hive = reinterpret_cast<HKEY>(static_cast<ULONG_PTR>(_statement->get_int64(1))),
+                .hive = static_cast<uint64_t>(_statement->get_int64(1)),
                 .path = _statement->get_text(2),
-                .last_write_time = RegistryKeyTime(std::chrono::file_clock::duration(_statement->get_int64(3)))
+                .last_write_time = RegistryTime(std::chrono::file_clock::duration(_statement->get_int64(3)))
             };
         }
         else
@@ -43,8 +47,20 @@ namespace anyreg
         return *this;
     }
 
+    RegistryRecordIterator RegistryRecordIterator::operator++(int)
+    {
+        const auto copy = *this;
+        ++*this;
+        return copy;
+    }
+
     bool RegistryRecordIterator::operator!=(const RegistryRecordIterator& other) const
     {
-        return _statement != other._statement;
+        return !(*this == other);
+    }
+
+    bool RegistryRecordIterator::operator==(const RegistryRecordIterator& other) const
+    {
+        return _statement == other._statement;
     }
 }

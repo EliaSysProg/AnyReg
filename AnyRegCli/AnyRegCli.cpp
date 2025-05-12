@@ -1,13 +1,15 @@
 #include "AnyRegCore/RegistryDatabase.hpp"
+#include "AnyRegCore/RegistryIndexer.hpp"
 #include "AnyRegCore/WinError.hpp"
+#include "SQLite3Wrapper/DatabaseError.hpp"
 
-#include <array>
 #include <exception>
 #include <format>
-#include <future>
 #include <iostream>
 #include <print>
 #include <ranges>
+#include <stacktrace>
+#include <thread>
 
 #define TRACE(msg, ...) OutputDebugStringW(std::format(L"[{}:{} | {}] " msg L"\n", __FILEW__, __LINE__, __FUNCTIONW__, __VA_ARGS__).c_str())
 
@@ -37,25 +39,24 @@ int main(const int argc, const char* const argv[])
     {
         TRACE(L"Application started");
 
+        auto db = anyreg::RegistryDatabase::create();
+
         std::jthread save_thread;
 
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
-            anyreg::RegistryDatabase db;
+            auto db_indexing = anyreg::RegistryDatabase::open_write();
+            auto indexer = anyreg::RegistryIndexer(db_indexing);
             TRACE(L"Indexing");
-            db.index(std::array{
-                HKEY_LOCAL_MACHINE,
-                HKEY_CURRENT_USER,
-                HKEY_USERS,
-                HKEY_CURRENT_CONFIG,
-                HKEY_CLASSES_ROOT,
-            });
+            for (const auto hive : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG, HKEY_CLASSES_ROOT})
+            {
+                indexer.index(reinterpret_cast<uint64_t>(hive));
+            }
 
             save_thread = std::jthread([]
             {
-                const anyreg::RegistryDatabase db(SQLITE_OPEN_READONLY);
                 TRACE(L"Backing up");
-                db.save(L"AnyReg.db");
+                anyreg::RegistryDatabase::open_read().save(L"AnyReg.db");
                 TRACE(L"Backed up");
             });
         }
@@ -65,13 +66,9 @@ int main(const int argc, const char* const argv[])
             throw anyreg::WinError();
         }
 
-        const anyreg::RegistryDatabase db;
-        auto empty_query = db.get_empty_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        auto like_query = db.get_like_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        auto fts_query = db.get_fts_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        empty_query.bind_range(0, 20);
-        like_query.bind_range(0, 20);
-        fts_query.bind_range(0, 20);
+        const auto db_querying = anyreg::RegistryDatabase::open_read();
+        const auto find_operation = db_querying.start_find_operation(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
+        db_querying.bind_find_operation(find_operation, 0, 10);
         TRACE(L"Getting input from user");
         std::string line;
         std::print(">> ");
@@ -79,35 +76,18 @@ int main(const int argc, const char* const argv[])
         {
             const auto t = timeit([&]
             {
-                anyreg::RegistryRecordIterator it;
-
-                if (line.empty())
-                {
-                    empty_query.reset();
-                    std::println("Executing: \"{}\"", empty_query.get_sql());
-                    it = empty_query.begin();
-                }
-                else if (line.size() < 3)
-                {
-                    like_query.reset();
-                    like_query.bind_query(line);
-                    std::println("Executing: \"{}\"", like_query.get_sql());
-                    it = like_query.begin();
-                }
-                else
-                {
-                    fts_query.reset();
-                    fts_query.bind_query(line);
-                    std::println("Executing: \"{}\"", fts_query.get_sql());
-                    it = fts_query.begin();
-                }
-
-                std::for_each(it, {}, [](const anyreg::RegistryKeyView& entry) { std::println("{}", entry.get_full_path()); });
+                db_querying.bind_find_operation(find_operation, line);
+                std::ranges::for_each(anyreg::RegistryRecordRange(find_operation),
+                                      [](const anyreg::RegistryKeyView& entry) { std::println("{}", entry.full_path()); });
+                db_querying.reset_find_operation(find_operation);
+                std::println("Count: {}", db_querying.count_keys(line));
             });
 
             std::println("Time: {}", t);
             std::print(">> ");
         }
+
+        db_querying.end_find_operation(find_operation);
 
         TRACE(L"Application finished gracefully");
 

@@ -10,7 +10,7 @@ namespace sql
     }
 
     DatabaseError::DatabaseError(const std::string_view msg)
-        : std::runtime_error({msg.data(), msg.size()}),
+        : std::runtime_error(msg.data()),
           _stacktrace(std::stacktrace::current())
     {
     }

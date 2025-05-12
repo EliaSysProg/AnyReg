@@ -33,27 +33,22 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="EmptyStatement.cpp" />
-    <ClCompile Include="FtsStatement.cpp" />
-    <ClCompile Include="InsertKeyStatement.cpp" />
-    <ClCompile Include="LikeStatement.cpp" />
-    <ClCompile Include="FindStatementBase.cpp" />
     <ClCompile Include="RegistryDatabase.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegistryEntry.cpp" />
+    <ClCompile Include="RegistryIndexer.cpp" />
     <ClCompile Include="RegistryRecordIterator.cpp" />
+    <ClCompile Include="RegistryRecordRange.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="EmptyStatement.hpp" />
-    <ClInclude Include="FtsStatement.hpp" />
-    <ClInclude Include="InsertKeyStatement.hpp" />
-    <ClInclude Include="LikeStatement.hpp" />
-    <ClInclude Include="FindStatementBase.hpp" />
+    <ClInclude Include="AnyRegCore.hpp" />
     <ClInclude Include="RegistryDatabase.hpp" />
     <ClInclude Include="Registry.hpp" />
     <ClInclude Include="RegistryEntry.hpp" />
+    <ClInclude Include="RegistryIndexer.hpp" />
     <ClInclude Include="RegistryRecordIterator.hpp" />
+    <ClInclude Include="RegistryRecordRange.hpp" />
     <ClInclude Include="WinError.hpp" />
   </ItemGroup>
   <ItemGroup>
