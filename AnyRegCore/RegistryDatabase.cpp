@@ -149,6 +149,11 @@ END;)");
         return sql::ScopedTransaction(_db);
     }
 
+    sql::ProgressHandler RegistryDatabase::create_progress_handler(std::function<bool()> callback) const
+    {
+        return {_db, std::move(callback)};
+    }
+
     void RegistryDatabase::insert_key(const RegistryKeyView& key)
     {
         _insert_key_statement.bind_text(1, key.name);

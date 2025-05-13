@@ -47,6 +47,7 @@ namespace anyreg
         void load(const std::filesystem::path& filename);
 
         [[nodiscard]] sql::ScopedTransaction begin_scoped_transaction() const;
+        [[nodiscard]] sql::ProgressHandler create_progress_handler(std::function<bool()> callback) const;
         void insert_key(const RegistryKeyView& key);
 
         [[nodiscard]] size_t count_keys(std::string_view query) const;

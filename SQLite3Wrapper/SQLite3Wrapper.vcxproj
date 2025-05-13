@@ -37,6 +37,7 @@
     <ClCompile Include="DatabaseConnection.cpp" />
     <ClCompile Include="DatabaseError.cpp" />
     <ClCompile Include="DatabaseUtils.cpp" />
+    <ClCompile Include="ProgressHandler.cpp" />
     <ClCompile Include="QueryUtils.cpp" />
     <ClCompile Include="ScopedTransaction.cpp" />
     <ClCompile Include="Statement.cpp" />
@@ -46,6 +47,7 @@
     <ClInclude Include="DatabaseConnection.hpp" />
     <ClInclude Include="DatabaseError.hpp" />
     <ClInclude Include="DatabaseUtils.hpp" />
+    <ClInclude Include="ProgressHandler.hpp" />
     <ClInclude Include="QueryUtils.hpp" />
     <ClInclude Include="ScopedTransaction.hpp" />
     <ClInclude Include="SQLite3Wrapper.hpp" />
