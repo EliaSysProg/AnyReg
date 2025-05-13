@@ -7,7 +7,7 @@ namespace anyreg
     class RegistryRecordRange
     {
     public:
-        explicit RegistryRecordRange(sql::Statement* statement);
+        explicit RegistryRecordRange(sql::Statement& statement);
 
         [[nodiscard]] RegistryRecordIterator begin() const;
         [[nodiscard]] RegistryRecordIterator end() const;

@@ -7,7 +7,7 @@ namespace sql
     class ScopedTransaction
     {
     public:
-        ScopedTransaction(const DatabaseConnection& db);
+        explicit ScopedTransaction(const DatabaseConnection& db);
         ~ScopedTransaction();
 
         ScopedTransaction(const ScopedTransaction& other) = delete;

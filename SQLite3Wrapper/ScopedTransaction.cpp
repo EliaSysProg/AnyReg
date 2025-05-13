@@ -15,6 +15,7 @@ namespace sql
             _db->execute("END;");
         }
         catch (...)
-        {}
+        {
+        }
     }
 }

@@ -82,6 +82,8 @@ namespace sql
 
     bool Statement::step()
     {
+        const auto sql = get_sql() + '\n';
+        OutputDebugStringA(sql.c_str());
         const auto error_code = sqlite3_step(_sqlite3_stmt.get());
         if (error_code != SQLITE_DONE && error_code != SQLITE_ROW)
         {

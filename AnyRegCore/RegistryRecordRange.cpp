@@ -2,8 +2,8 @@
 
 namespace anyreg
 {
-    RegistryRecordRange::RegistryRecordRange(sql::Statement* statement)
-        : _statement(statement)
+    RegistryRecordRange::RegistryRecordRange(sql::Statement& statement)
+        : _statement(&statement)
     {
     }
 

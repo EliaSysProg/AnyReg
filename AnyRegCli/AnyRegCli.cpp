@@ -41,6 +41,7 @@ int main(const int argc, const char* const argv[])
 
         auto db = anyreg::RegistryDatabase::create();
 
+        // Construct it here to avoid waiting for the thread to finish while backing up
         std::jthread save_thread;
 
         if (argc == 2 && std::string(argv[1]) == "--index")
@@ -55,9 +56,9 @@ int main(const int argc, const char* const argv[])
 
             save_thread = std::jthread([]
             {
-                TRACE(L"Backing up");
+                TRACE(L"Saving DB");
                 anyreg::RegistryDatabase::open_read().save(L"AnyReg.db");
-                TRACE(L"Backed up");
+                TRACE(L"DB saved");
             });
         }
 
@@ -67,8 +68,8 @@ int main(const int argc, const char* const argv[])
         }
 
         const auto db_querying = anyreg::RegistryDatabase::open_read();
-        const auto find_operation = db_querying.start_find_operation(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        db_querying.bind_find_operation(find_operation, 0, 10);
+        auto find_statement = db_querying.find_keys(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
+        find_statement.bind(0, 10);
         TRACE(L"Getting input from user");
         std::string line;
         std::print(">> ");
@@ -76,18 +77,16 @@ int main(const int argc, const char* const argv[])
         {
             const auto t = timeit([&]
             {
-                db_querying.bind_find_operation(find_operation, line);
-                std::ranges::for_each(anyreg::RegistryRecordRange(find_operation),
+                find_statement.bind(line);
+                std::ranges::for_each(find_statement.find(),
                                       [](const anyreg::RegistryKeyView& entry) { std::println("{}", entry.full_path()); });
-                db_querying.reset_find_operation(find_operation);
+                find_statement.reset();
                 std::println("Count: {}", db_querying.count_keys(line));
             });
 
             std::println("Time: {}", t);
             std::print(">> ");
         }
-
-        db_querying.end_find_operation(find_operation);
 
         TRACE(L"Application finished gracefully");
 

@@ -1,13 +1,9 @@
 ﻿#pragma once
 
 #include "RegistryEntry.hpp"
+#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
 
 #include <iterator>
-
-namespace sql
-{
-    class Statement;
-}
 
 namespace anyreg
 {

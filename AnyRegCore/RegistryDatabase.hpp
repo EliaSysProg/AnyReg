@@ -2,14 +2,9 @@
 
 #include "RegistryEntry.hpp"
 #include "RegistryRecordRange.hpp"
+#include "SQLite3Wrapper/SQLite3Wrapper.hpp"
 
 #include <filesystem>
-
-namespace sql
-{
-    class DatabaseConnection;
-    class ScopedTransaction;
-}
 
 namespace anyreg
 {
@@ -26,7 +21,20 @@ namespace anyreg
         DESCENDING,
     };
 
-    class InsertKeyStatement;
+    class FindKeyStatement final
+    {
+    public:
+        FindKeyStatement(const sql::DatabaseConnection& db, SortColumn column, SortOrder order);
+
+        void bind(std::string_view query);
+        void bind(size_t offset, size_t count);
+        void reset();
+
+        [[nodiscard]] RegistryRecordRange find();
+
+    private:
+        sql::Statement _statement;
+    };
 
     class RegistryDatabase final
     {
@@ -35,26 +43,19 @@ namespace anyreg
         static RegistryDatabase open_read();
         static RegistryDatabase open_write();
 
-        ~RegistryDatabase();
-
         void save(const std::filesystem::path& filename) const;
         void load(const std::filesystem::path& filename);
 
-        sql::ScopedTransaction* begin_transaction();
-        void end_transaction(sql::ScopedTransaction* transaction);
+        [[nodiscard]] sql::ScopedTransaction begin_scoped_transaction() const;
         void insert_key(const RegistryKeyView& key);
 
         [[nodiscard]] size_t count_keys(std::string_view query) const;
-        [[nodiscard]] sql::Statement* start_find_operation(SortColumn column, SortOrder order) const;
-        void end_find_operation(sql::Statement* find_operation) const;
-        void bind_find_operation(sql::Statement* statement, std::string_view query) const;
-        void bind_find_operation(sql::Statement* statement, size_t offset, size_t count) const;
-        void reset_find_operation(sql::Statement* statement) const;
+        [[nodiscard]] FindKeyStatement find_keys(SortColumn column, SortOrder order) const;
 
     private:
-        explicit RegistryDatabase(std::unique_ptr<sql::DatabaseConnection> db);
+        explicit RegistryDatabase(sql::DatabaseConnection db);
 
-        std::unique_ptr<sql::DatabaseConnection> _db;
-        std::unique_ptr<InsertKeyStatement> _insert_key_statement;
+        sql::DatabaseConnection _db;
+        sql::Statement _insert_key_statement;
     };
 }
