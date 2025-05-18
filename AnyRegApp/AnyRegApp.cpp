@@ -2,15 +2,27 @@
 #include "AnyRegApp.hpp"
 
 #include "RegistryListModel.hpp"
+#include "AnyRegCore/Debug.hpp"
 
 AnyRegApp::AnyRegApp(QWidget* parent)
     : QMainWindow(parent)
 {
+    TRACE("Constructing AnyRegApp");
     _ui.setupUi(this);
 
     installEventFilter(this);
-    _model = new RegistryListModel;
-    _fetcher = new RegistryFetcher;
+    anyreg::RegistryDatabase db;
+    for (const auto hive : {
+             HKEY_LOCAL_MACHINE,
+             HKEY_CURRENT_USER,
+             HKEY_USERS,
+             HKEY_CURRENT_CONFIG,
+             HKEY_CLASSES_ROOT,
+         })
+    {
+        anyreg::index_hive(db, hive);
+    }
+    _model = new RegistryListModel(std::move(db), this);
     _ui.resultList->setModel(_model);
 
     _ui.searchBox->setFocus();
@@ -22,9 +34,8 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 
     connect(_ui.searchBox, &QLineEdit::textChanged, _model, &RegistryListModel::set_query);
     connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, _model, &RegistryListModel::set_sort_order);
-    connect(_model, &RegistryListModel::request_count, _fetcher, &RegistryFetcher::fetch_count, Qt::QueuedConnection);
-    connect(_fetcher, &RegistryFetcher::count_fetched, _model, &RegistryListModel::set_count, Qt::QueuedConnection);
 
+    TRACE("Setting default query");
     set_table_query("");
 }
 

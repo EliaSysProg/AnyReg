@@ -8,10 +8,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AnyRegCli", "AnyRegCli\AnyR
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "AnyRegApp", "AnyRegApp\AnyRegApp.vcxproj", "{F18FB7BA-209A-4A62-A396-1905ADB0665B}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SQLite3", "SQLite3\SQLite3.vcxproj", "{80F80D52-322D-75EC-0CAF-D213E0C8BECC}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SQLite3Wrapper", "SQLite3Wrapper\SQLite3Wrapper.vcxproj", "{DA2FB236-B0B0-F94B-CFC3-2E8C10FC104F}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -30,14 +26,6 @@ Global
 		{F18FB7BA-209A-4A62-A396-1905ADB0665B}.Debug|x64.Build.0 = Debug|x64
 		{F18FB7BA-209A-4A62-A396-1905ADB0665B}.Release|x64.ActiveCfg = Release|x64
 		{F18FB7BA-209A-4A62-A396-1905ADB0665B}.Release|x64.Build.0 = Release|x64
-		{80F80D52-322D-75EC-0CAF-D213E0C8BECC}.Debug|x64.ActiveCfg = Debug|x64
-		{80F80D52-322D-75EC-0CAF-D213E0C8BECC}.Debug|x64.Build.0 = Debug|x64
-		{80F80D52-322D-75EC-0CAF-D213E0C8BECC}.Release|x64.ActiveCfg = Release|x64
-		{80F80D52-322D-75EC-0CAF-D213E0C8BECC}.Release|x64.Build.0 = Release|x64
-		{DA2FB236-B0B0-F94B-CFC3-2E8C10FC104F}.Debug|x64.ActiveCfg = Debug|x64
-		{DA2FB236-B0B0-F94B-CFC3-2E8C10FC104F}.Debug|x64.Build.0 = Debug|x64
-		{DA2FB236-B0B0-F94B-CFC3-2E8C10FC104F}.Release|x64.ActiveCfg = Release|x64
-		{DA2FB236-B0B0-F94B-CFC3-2E8C10FC104F}.Release|x64.Build.0 = Release|x64
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

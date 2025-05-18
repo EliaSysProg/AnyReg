@@ -62,17 +62,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnyRegApp.cpp" />
-    <ClCompile Include="GuiKeyEntry.cpp" />
-    <ClCompile Include="GuiQuery.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="RegistryFetcher.cpp" />
     <ClCompile Include="RegistryListModel.cpp" />
-    <ClCompile Include="RegistryTableView.cpp" />
     <ClCompile Include="stdafx.cpp" PrecompiledHeader="Create" />
-    <QtMoc Include="RegistryFetcher.hpp" />
-    <ClInclude Include="GuiKeyEntry.hpp" />
-    <ClInclude Include="GuiQuery.hpp" />
-    <QtMoc Include="RegistryTableView.hpp" />
     <ClInclude Include="stdafx.h" />
     <QtMoc Include="AnyRegApp.hpp" />
     <QtMoc Include="RegistryListModel.hpp" />

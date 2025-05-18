@@ -1,8 +1,7 @@
-#include "AnyRegCore/RegistryDatabase.hpp"
-#include "AnyRegCore/RegistryIndexer.hpp"
+#include "AnyRegCore/AnyRegCore.hpp"
 #include "AnyRegCore/WinError.hpp"
-#include "SQLite3Wrapper/DatabaseError.hpp"
 
+#include <algorithm>
 #include <exception>
 #include <format>
 #include <iostream>
@@ -10,6 +9,7 @@
 #include <ranges>
 #include <stacktrace>
 #include <thread>
+#include <chrono>
 
 #define TRACE(msg, ...) OutputDebugStringW(std::format(L"[{}:{} | {}] " msg L"\n", __FILEW__, __LINE__, __FUNCTIONW__, __VA_ARGS__).c_str())
 
@@ -24,42 +24,32 @@ static auto timeit(Func&& func)
     return chr::duration_cast<chr::milliseconds>(end - start);
 }
 
-static void print_stacktrace(const std::stacktrace& stacktrace)
-{
-    for (const auto& entry : stacktrace)
-    {
-        if (entry.source_file().empty()) continue;
-        std::println("{}:{}", entry.source_file(), entry.source_line());
-    }
-}
+// static void print_stacktrace(const std::stacktrace& stacktrace)
+// {
+//     for (const auto& entry : stacktrace)
+//     {
+//         if (entry.source_file().empty()) continue;
+//         std::println("{}:{}", entry.source_file(), entry.source_line());
+//     }
+// }
 
-int main(const int argc, const char* const argv[])
+int main(const int /*argc*/, const char* const /*argv*/[])
 {
     try
     {
         TRACE(L"Application started");
+        anyreg::RegistryDatabase db;
 
-        auto db = anyreg::RegistryDatabase::create();
-
-        // Construct it here to avoid waiting for the thread to finish while backing up
-        std::jthread save_thread;
-
-        if (argc == 2 && std::string(argv[1]) == "--index")
+        TRACE(L"Indexing");
+        for (const auto hive : {
+                 // HKEY_LOCAL_MACHINE,
+                 HKEY_CURRENT_USER,
+                 // HKEY_USERS,
+                 // HKEY_CURRENT_CONFIG,
+                 // HKEY_CLASSES_ROOT,
+             })
         {
-            auto db_indexing = anyreg::RegistryDatabase::open_write();
-            auto indexer = anyreg::RegistryIndexer(db_indexing);
-            TRACE(L"Indexing");
-            for (const auto hive : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG, HKEY_CLASSES_ROOT})
-            {
-                indexer.index(reinterpret_cast<uint64_t>(hive));
-            }
-
-            save_thread = std::jthread([]
-            {
-                TRACE(L"Saving DB");
-                anyreg::RegistryDatabase::open_read().save(L"AnyReg.db");
-                TRACE(L"DB saved");
-            });
+            anyreg::index_hive(db, hive);
         }
 
         if (!SetConsoleOutputCP(GetACP()))
@@ -67,9 +57,12 @@ int main(const int argc, const char* const argv[])
             throw anyreg::WinError();
         }
 
-        const auto db_querying = anyreg::RegistryDatabase::open_read();
-        auto find_statement = db_querying.find_keys(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        find_statement.bind(0, 10);
+        static constexpr auto ichar_equals = [](const char a, const char b) -> bool
+        {
+            return std::tolower(static_cast<unsigned char>(a)) ==
+                std::tolower(static_cast<unsigned char>(b));
+        };
+
         TRACE(L"Getting input from user");
         std::string line;
         std::print(">> ");
@@ -77,11 +70,18 @@ int main(const int argc, const char* const argv[])
         {
             const auto t = timeit([&]
             {
-                find_statement.bind(line);
-                std::ranges::for_each(find_statement.find(),
-                                      [](const anyreg::RegistryKeyView& entry) { std::println("{}", entry.full_path()); });
-                find_statement.reset();
-                std::println("Count: {}", db_querying.count_keys(line));
+                const auto entries = db | std::views::filter(
+                    [&](const std::pair<anyreg::RegistryId, anyreg::RegistryKeyEntry>& entry) -> bool
+                    {
+                        return std::search(entry.second.name.begin(), entry.second.name.end(),
+                                           line.begin(), line.end(),
+                                           ichar_equals) != entry.second.name.end();
+                    }) | std::ranges::to<std::vector>();
+                for (const auto& [id, entry] : entries | std::views::take(20))
+                {
+                    std::println("{}", anyreg::key_full_path(db, id));
+                }
+                std::println("Count: {}", entries.size());
             });
 
             std::println("Time: {}", t);
@@ -91,11 +91,6 @@ int main(const int argc, const char* const argv[])
         TRACE(L"Application finished gracefully");
 
         return EXIT_SUCCESS;
-    }
-    catch (const sql::DatabaseError& e)
-    {
-        std::println("Database error: {}", e.what());
-        print_stacktrace(e.stacktrace());
     }
     catch (const std::exception& e)
     {

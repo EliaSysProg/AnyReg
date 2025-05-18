@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RegistryFetcher.hpp"
 #include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
 
@@ -21,5 +20,4 @@ private:
 
     Ui::AnyRegAppClass _ui;
     RegistryListModel* _model = nullptr;
-    RegistryFetcher* _fetcher = nullptr;
 };

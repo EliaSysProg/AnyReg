@@ -33,28 +33,16 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
-    <ClCompile Include="RegistryDatabase.cpp" />
+    <ClCompile Include="Debug.cpp" />
     <ClCompile Include="Registry.cpp" />
-    <ClCompile Include="RegistryEntry.cpp" />
-    <ClCompile Include="RegistryIndexer.cpp" />
-    <ClCompile Include="RegistryRecordIterator.cpp" />
-    <ClCompile Include="RegistryRecordRange.cpp" />
+    <ClCompile Include="AnyRegCore.cpp" />
     <ClCompile Include="WinError.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="AnyRegCore.hpp" />
-    <ClInclude Include="RegistryDatabase.hpp" />
+    <ClInclude Include="Debug.hpp" />
     <ClInclude Include="Registry.hpp" />
-    <ClInclude Include="RegistryEntry.hpp" />
-    <ClInclude Include="RegistryIndexer.hpp" />
-    <ClInclude Include="RegistryRecordIterator.hpp" />
-    <ClInclude Include="RegistryRecordRange.hpp" />
+    <ClInclude Include="AnyRegCore.hpp" />
     <ClInclude Include="WinError.hpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\SQLite3Wrapper\SQLite3Wrapper.vcxproj">
-      <Project>{da2fb236-b0b0-f94b-cfc3-2e8c10fc104f}</Project>
-    </ProjectReference>
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
