@@ -1,7 +1,6 @@
 ﻿#pragma once
 
 #include <chrono>
-#include <string>
 #include <string_view>
 
 namespace anyreg
@@ -11,11 +10,7 @@ namespace anyreg
     struct RegistryKeyView final
     {
         std::string_view name;
-        uint64_t hive;
-        std::string_view path;
+        int64_t parent_id;
         RegistryTime last_write_time;
-
-        [[nodiscard]] std::string full_path() const;
-        [[nodiscard]] std::string hive_relative_path() const;
     };
 }

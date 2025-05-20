@@ -33,9 +33,8 @@ namespace anyreg
         {
             _current = RegistryKeyView{
                 .name = _statement->get_text(0),
-                .hive = static_cast<uint64_t>(_statement->get_int64(1)),
-                .path = _statement->get_text(2),
-                .last_write_time = RegistryTime(std::chrono::file_clock::duration(_statement->get_int64(3)))
+                .parent_id = _statement->get_int64(1),
+                .last_write_time = RegistryTime(std::chrono::file_clock::duration(_statement->get_int64(2)))
             };
         }
         else

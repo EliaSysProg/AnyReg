@@ -43,4 +43,15 @@ namespace sql
     {
         return static_cast<const wchar_t*>(sqlite3_errmsg16(_sqlite3.get()));
     }
+
+    int64_t DatabaseConnection::last_insert_rowid() const
+    {
+        const auto rowid = sqlite3_last_insert_rowid(_sqlite3.get());
+        if (rowid == 0)
+        {
+            throw ConnectionError(errmsg());
+        }
+
+        return rowid;
+    }
 }

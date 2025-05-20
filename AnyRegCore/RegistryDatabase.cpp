@@ -18,7 +18,7 @@ namespace anyreg
         case SortColumn::NAME:
             return "Name";
         case SortColumn::PATH:
-            return "Path";
+            return "ParentId";
         case SortColumn::LAST_WRITE_TIME:
             return "LastWriteTime";
         default:
@@ -41,7 +41,7 @@ namespace anyreg
 
     FindKeyStatement::FindKeyStatement(const sql::DatabaseConnection& db, const SortColumn column, const SortOrder order)
         : _statement(db, std::format(R"(
-SELECT k.Name, k.Hive, k.Path, k.LastWriteTime
+SELECT k.Name, k.ParentId, k.LastWriteTime
     FROM RegistryKeys k
 INNER JOIN RegistryKeys_fts fts ON k.rowid = fts.rowid
     WHERE RegistryKeys_fts MATCH ?1
@@ -67,7 +67,7 @@ ORDER BY k.{} {} LIMIT ?3 OFFSET ?2;)", column_name(column), order_name(order)))
 
     RegistryRecordRange FindKeyStatement::find()
     {
-        return RegistryRecordRange{_statement};   
+        return RegistryRecordRange{_statement};
     }
 
     RegistryDatabase RegistryDatabase::create()
@@ -80,11 +80,11 @@ ORDER BY k.{} {} LIMIT ?3 OFFSET ?2;)", column_name(column), order_name(order)))
 
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
+    Id INTEGER PRIMARY KEY AUTOINCREMENT,
     Name TEXT NOT NULL,
-    Hive INTEGER NOT NULL,
-    Path TEXT NOT NULL,
+    ParentId INTEGER,
     LastWriteTime INTEGER,
-    UNIQUE(Hive, Name, Path)
+    UNIQUE(Name, ParentId)
 );)");
 
         // Create FTS5 virtual table
@@ -111,7 +111,7 @@ END;)");
         db.execute("PRAGMA journal_mode = WAL");
 
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_name ON RegistryKeys(Name)");
-        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_path ON RegistryKeys(Path)");
+        db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_parentid ON RegistryKeys(ParentId)");
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
 
         return RegistryDatabase{std::move(db)};
@@ -157,16 +157,24 @@ END;)");
     void RegistryDatabase::insert_key(const RegistryKeyView& key)
     {
         _insert_key_statement.bind_text(1, key.name);
-        _insert_key_statement.bind_int64(2, static_cast<int64_t>(key.hive));
-        _insert_key_statement.bind_text(3, key.path);
-        _insert_key_statement.bind_int64(4, key.last_write_time.time_since_epoch().count());
+        if (key.parent_id > 0) // 0 - no parent (hive root key)
+        {
+            _insert_key_statement.bind_int64(2, key.parent_id);
+        }
+        const auto key_time_int = key.last_write_time.time_since_epoch().count();
+        if (key_time_int > 0)
+        {
+            _insert_key_statement.bind_int64(3, key_time_int);
+        }
 
-        if (_insert_key_statement.step())
+        const auto row_available = _insert_key_statement.step();
+        if (row_available)
         {
             throw sql::StatementError(std::format("Insert key: {} returned rows: {}", key.name, _insert_key_statement.get_sql()));
         }
 
         _insert_key_statement.reset();
+        _insert_key_statement.clear_bindings();
     }
 
     size_t RegistryDatabase::count_keys(const std::string_view query) const
@@ -187,13 +195,18 @@ END;)");
         return FindKeyStatement{_db, column, order};
     }
 
+    int64_t RegistryDatabase::last_insert_rowid() const
+    {
+        return _db.last_insert_rowid();
+    }
+
     RegistryDatabase::RegistryDatabase(sql::DatabaseConnection db)
         : _db(std::move(db)),
           _insert_key_statement(_db,
                                 R"(
-INSERT INTO RegistryKeys (Name, Hive, Path, LastWriteTime)
-    VALUES (?, ?, ?, ?)
-ON CONFLICT(Hive, Name, Path) DO UPDATE
+INSERT INTO RegistryKeys (Name, ParentId, LastWriteTime)
+    VALUES (?, ?, ?)
+ON CONFLICT(Name, ParentId) DO UPDATE
     SET LastWriteTime = excluded.LastWriteTime
     WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;)")
     {

@@ -1,5 +1,6 @@
 ﻿#pragma once
 
+#include "Registry.hpp"
 #include "RegistryDatabase.hpp"
 
 #include <stop_token>
@@ -7,14 +8,6 @@
 
 namespace anyreg
 {
-    class RegistryIndexer final
-    {
-    public:
-        explicit RegistryIndexer(RegistryDatabase& db);
-
-        void index(uint64_t hive, std::string_view path = "", const std::stop_token& stop_token = {}) const;
-
-    private:
-        RegistryDatabase* _db;
-    };
+    void scan_registry(RegistryDatabase& db, HKEY hive, const std::stop_token& stop_token = {});
+    void scan_registry(RegistryDatabase& db, HKEY hive, std::string_view path, const std::stop_token& stop_token = {});
 }

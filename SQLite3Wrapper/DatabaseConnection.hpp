@@ -22,9 +22,10 @@ namespace sql
 
         void execute(const std::string& sql) const;
 
-        [[nodiscard]] sqlite3* get() const; 
-        [[nodiscard]] const char* errmsg() const; 
-        [[nodiscard]] const wchar_t* errmsg16() const; 
+        [[nodiscard]] sqlite3* get() const;
+        [[nodiscard]] const char* errmsg() const;
+        [[nodiscard]] const wchar_t* errmsg16() const;
+        [[nodiscard]] int64_t last_insert_rowid() const;
 
     private:
         std::unique_ptr<sqlite3, SQLite3Deleter> _sqlite3;

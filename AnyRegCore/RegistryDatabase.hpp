@@ -52,6 +52,7 @@ namespace anyreg
 
         [[nodiscard]] size_t count_keys(std::string_view query) const;
         [[nodiscard]] FindKeyStatement find_keys(SortColumn column, SortOrder order) const;
+        [[nodiscard]] int64_t last_insert_rowid() const;
 
     private:
         explicit RegistryDatabase(sql::DatabaseConnection db);

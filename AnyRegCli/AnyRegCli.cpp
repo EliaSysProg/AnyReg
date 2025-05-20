@@ -46,12 +46,17 @@ int main(const int argc, const char* const argv[])
 
         if (argc == 2 && std::string(argv[1]) == "--index")
         {
-            auto db_indexing = anyreg::RegistryDatabase::open_write();
-            auto indexer = anyreg::RegistryIndexer(db_indexing);
             TRACE(L"Indexing");
-            for (const auto hive : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_USERS, HKEY_CURRENT_CONFIG, HKEY_CLASSES_ROOT})
+            auto db_indexing = anyreg::RegistryDatabase::open_write();
+            for (const auto hive : {
+                     HKEY_LOCAL_MACHINE,
+                     // HKEY_CURRENT_USER,
+                     // HKEY_USERS,
+                     // HKEY_CURRENT_CONFIG,
+                     // HKEY_CLASSES_ROOT,
+                 })
             {
-                indexer.index(reinterpret_cast<uint64_t>(hive));
+                anyreg::scan_registry(db_indexing, hive, "SYSTEM");
             }
 
             save_thread = std::jthread([]
@@ -79,7 +84,10 @@ int main(const int argc, const char* const argv[])
             {
                 find_statement.bind(line);
                 std::ranges::for_each(find_statement.find(),
-                                      [](const anyreg::RegistryKeyView& entry) { std::println("{}", entry.full_path()); });
+                                      [](const anyreg::RegistryKeyView& entry)
+                                      {
+                                          std::println("{:7} | {} | {}", entry.parent_id, entry.last_write_time, entry.name);
+                                      });
                 find_statement.reset();
                 std::println("Count: {}", db_querying.count_keys(line));
             });
