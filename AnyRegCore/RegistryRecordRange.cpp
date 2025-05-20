@@ -1,19 +1,22 @@
 ﻿#include "RegistryRecordRange.hpp"
 
+#include "RegistryDatabase.hpp"
+
 namespace anyreg
 {
-    RegistryRecordRange::RegistryRecordRange(sql::Statement& statement)
-        : _statement(&statement)
+    RegistryRecordRange::RegistryRecordRange(const RegistryDatabase& db, std::vector<int64_t> ids)
+        : _db(&db),
+          _ids(std::move(ids))
     {
     }
 
-    RegistryRecordIterator RegistryRecordRange::begin() const
+    RegistryKeyView RegistryRecordRange::operator[](const size_t index) const
     {
-        return RegistryRecordIterator{_statement};
+        return _db->get_key(_ids[index]);
     }
 
-    RegistryRecordIterator RegistryRecordRange::end() const
+    size_t RegistryRecordRange::size() const
     {
-        return {};
+        return _ids.size();
     }
 }

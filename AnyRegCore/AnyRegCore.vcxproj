@@ -33,6 +33,7 @@
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="FindKeyStatement.cpp" />
     <ClCompile Include="RegistryDatabase.cpp" />
     <ClCompile Include="Registry.cpp" />
     <ClCompile Include="RegistryIndexer.cpp" />
@@ -42,6 +43,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="AnyRegCore.hpp" />
+    <ClInclude Include="FindKeyStatement.hpp" />
     <ClInclude Include="RegistryDatabase.hpp" />
     <ClInclude Include="Registry.hpp" />
     <ClInclude Include="RegistryEntry.hpp" />

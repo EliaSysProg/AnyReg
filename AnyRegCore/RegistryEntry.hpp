@@ -5,6 +5,19 @@
 
 namespace anyreg
 {
+    enum class SortColumn : uint8_t
+    {
+        NAME,
+        PATH,
+        LAST_WRITE_TIME,
+    };
+
+    enum class SortOrder : uint8_t
+    {
+        ASCENDING,
+        DESCENDING,
+    };
+
     using RegistryTime = std::chrono::file_time<std::chrono::file_clock::duration>;
 
     struct RegistryKeyView final

@@ -1,41 +1,13 @@
 ﻿#pragma once
 
+#include "FindKeyStatement.hpp"
 #include "RegistryEntry.hpp"
-#include "RegistryRecordRange.hpp"
 #include "SQLite3Wrapper/SQLite3Wrapper.hpp"
 
 #include <filesystem>
 
 namespace anyreg
 {
-    enum class SortColumn : uint8_t
-    {
-        NAME,
-        PATH,
-        LAST_WRITE_TIME,
-    };
-
-    enum class SortOrder : uint8_t
-    {
-        ASCENDING,
-        DESCENDING,
-    };
-
-    class FindKeyStatement final
-    {
-    public:
-        FindKeyStatement(const sql::DatabaseConnection& db, SortColumn column, SortOrder order);
-
-        void bind(std::string_view query);
-        void bind(size_t offset, size_t count);
-        void reset();
-
-        [[nodiscard]] RegistryRecordRange find();
-
-    private:
-        sql::Statement _statement;
-    };
-
     class RegistryDatabase final
     {
     public:
@@ -48,16 +20,20 @@ namespace anyreg
 
         [[nodiscard]] sql::ScopedTransaction begin_scoped_transaction() const;
         [[nodiscard]] sql::ProgressHandler create_progress_handler(std::function<bool()> callback) const;
-        void insert_key(const RegistryKeyView& key);
+        int64_t insert_key(const RegistryKeyView& key);
+        [[nodiscard]] RegistryKeyView get_key(int64_t id) const;
 
         [[nodiscard]] size_t count_keys(std::string_view query) const;
         [[nodiscard]] FindKeyStatement find_keys(SortColumn column, SortOrder order) const;
         [[nodiscard]] int64_t last_insert_rowid() const;
+
+        [[nodiscard]] const sql::DatabaseConnection& get() const;
 
     private:
         explicit RegistryDatabase(sql::DatabaseConnection db);
 
         sql::DatabaseConnection _db;
         sql::Statement _insert_key_statement;
+        mutable sql::Statement _get_key_statement;
     };
 }

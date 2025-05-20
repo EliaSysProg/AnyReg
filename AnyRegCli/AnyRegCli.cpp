@@ -74,7 +74,6 @@ int main(const int argc, const char* const argv[])
 
         const auto db_querying = anyreg::RegistryDatabase::open_read();
         auto find_statement = db_querying.find_keys(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING);
-        find_statement.bind(0, 10);
         TRACE(L"Getting input from user");
         std::string line;
         std::print(">> ");
@@ -83,13 +82,14 @@ int main(const int argc, const char* const argv[])
             const auto t = timeit([&]
             {
                 find_statement.bind(line);
-                std::ranges::for_each(find_statement.find(),
-                                      [](const anyreg::RegistryKeyView& entry)
-                                      {
-                                          std::println("{:7} | {} | {}", entry.parent_id, entry.last_write_time, entry.name);
-                                      });
+                const auto find_range = find_statement.find();
+                for (size_t i = 0; i < find_range.size() && i < 10; ++i)
+                {
+                    const auto& [name, parent_id, last_write_time] = find_range[i];
+                    std::println("{:7} | {} | {}", parent_id, last_write_time, name);
+                }
+                std::println("Count: {}", find_range.size());
                 find_statement.reset();
-                std::println("Count: {}", db_querying.count_keys(line));
             });
 
             std::println("Time: {}", t);

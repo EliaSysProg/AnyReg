@@ -9,66 +9,7 @@ namespace anyreg
 {
     static constexpr int DEFAULT_FLAGS = SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_MEMORY | SQLITE_OPEN_URI;
     static constexpr auto DATABASE_NAME = "file:AnyRegDb?mode=memory&cache=shared";
-    static constexpr auto DATABASE_FILE_NAME = R"(C:\Windows\Temp\AnyReg.db)";
-
-    constexpr std::string column_name(const SortColumn sort_column)
-    {
-        switch (sort_column)
-        {
-        case SortColumn::NAME:
-            return "Name";
-        case SortColumn::PATH:
-            return "ParentId";
-        case SortColumn::LAST_WRITE_TIME:
-            return "LastWriteTime";
-        default:
-            throw std::invalid_argument("Invalid SortColumn value");
-        }
-    }
-
-    constexpr std::string order_name(const SortOrder sort_order)
-    {
-        switch (sort_order)
-        {
-        case SortOrder::ASCENDING:
-            return "ASC";
-        case SortOrder::DESCENDING:
-            return "DESC";
-        default:
-            throw std::invalid_argument("Invalid SortOrder value");
-        }
-    }
-
-    FindKeyStatement::FindKeyStatement(const sql::DatabaseConnection& db, const SortColumn column, const SortOrder order)
-        : _statement(db, std::format(R"(
-SELECT k.Name, k.ParentId, k.LastWriteTime
-    FROM RegistryKeys k
-INNER JOIN RegistryKeys_fts fts ON k.rowid = fts.rowid
-    WHERE RegistryKeys_fts MATCH ?1
-ORDER BY k.{} {} LIMIT ?3 OFFSET ?2;)", column_name(column), order_name(order)))
-    {
-    }
-
-    void FindKeyStatement::bind(const std::string_view query)
-    {
-        _statement.bind_text(1, sql::query::fts_escape(query), true);
-    }
-
-    void FindKeyStatement::bind(const size_t offset, const size_t count)
-    {
-        _statement.bind_int64(2, static_cast<int64_t>(offset));
-        _statement.bind_int64(3, static_cast<int64_t>(count));
-    }
-
-    void FindKeyStatement::reset()
-    {
-        _statement.reset();
-    }
-
-    RegistryRecordRange FindKeyStatement::find()
-    {
-        return RegistryRecordRange{_statement};
-    }
+    static constexpr auto DATABASE_FILE_NAME = "AnyReg.db";
 
     RegistryDatabase RegistryDatabase::create()
     {
@@ -154,7 +95,7 @@ END;)");
         return {_db, std::move(callback)};
     }
 
-    void RegistryDatabase::insert_key(const RegistryKeyView& key)
+    int64_t RegistryDatabase::insert_key(const RegistryKeyView& key)
     {
         _insert_key_statement.bind_text(1, key.name);
         if (key.parent_id > 0) // 0 - no parent (hive root key)
@@ -175,6 +116,29 @@ END;)");
 
         _insert_key_statement.reset();
         _insert_key_statement.clear_bindings();
+
+        return last_insert_rowid();
+    }
+
+    RegistryKeyView RegistryDatabase::get_key(int64_t id) const
+    {
+        _get_key_statement.bind_int64(1, id);
+        if (!_get_key_statement.step())
+        {
+            throw sql::StatementError(std::format("Get key: {} Didn't return rows: {}", id, _get_key_statement.get_sql()));
+        }
+
+        const auto name = _get_key_statement.get_text(0);
+        const auto parent_id = _get_key_statement.get_int64(1);
+        const auto last_write_time = _get_key_statement.get_int64(2);
+
+        _get_key_statement.reset();
+
+        return {
+            .name = name,
+            .parent_id = parent_id,
+            .last_write_time = RegistryTime{std::chrono::file_clock::duration{last_write_time}}
+        };
     }
 
     size_t RegistryDatabase::count_keys(const std::string_view query) const
@@ -192,12 +156,17 @@ END;)");
 
     FindKeyStatement RegistryDatabase::find_keys(const SortColumn column, const SortOrder order) const
     {
-        return FindKeyStatement{_db, column, order};
+        return FindKeyStatement{*this, column, order};
     }
 
     int64_t RegistryDatabase::last_insert_rowid() const
     {
         return _db.last_insert_rowid();
+    }
+
+    const sql::DatabaseConnection& RegistryDatabase::get() const
+    {
+        return _db;
     }
 
     RegistryDatabase::RegistryDatabase(sql::DatabaseConnection db)
@@ -208,7 +177,8 @@ INSERT INTO RegistryKeys (Name, ParentId, LastWriteTime)
     VALUES (?, ?, ?)
 ON CONFLICT(Name, ParentId) DO UPDATE
     SET LastWriteTime = excluded.LastWriteTime
-    WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;)")
+    WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;)"),
+          _get_key_statement(_db, "SELECT Name, ParentId, LastWriteTime FROM RegistryKeys WHERE Id = ?;")
     {
     }
 }
