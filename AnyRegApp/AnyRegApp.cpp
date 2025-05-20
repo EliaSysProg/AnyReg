@@ -4,13 +4,13 @@
 #include "RegistryListModel.hpp"
 
 AnyRegApp::AnyRegApp(QWidget* parent)
-    : QMainWindow(parent)
+    : QMainWindow(parent),
+      _db(anyreg::RegistryDatabase::create())
 {
     _ui.setupUi(this);
 
     installEventFilter(this);
     _model = new RegistryListModel;
-    _fetcher = new RegistryFetcher;
     _ui.resultList->setModel(_model);
 
     _ui.searchBox->setFocus();
@@ -22,8 +22,6 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 
     connect(_ui.searchBox, &QLineEdit::textChanged, _model, &RegistryListModel::set_query);
     connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, _model, &RegistryListModel::set_sort_order);
-    connect(_model, &RegistryListModel::request_count, _fetcher, &RegistryFetcher::fetch_count, Qt::QueuedConnection);
-    connect(_fetcher, &RegistryFetcher::count_fetched, _model, &RegistryListModel::set_count, Qt::QueuedConnection);
 
     set_table_query("");
 }

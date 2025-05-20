@@ -10,10 +10,9 @@ namespace anyreg
     class FindKeyStatement final
     {
     public:
-        FindKeyStatement(const RegistryDatabase& db, SortColumn column, SortOrder order);
+        FindKeyStatement(const RegistryDatabase& db, SortColumn column, SortOrder order, std::string_view query = {});
 
         void bind(std::string_view query);
-        void reset();
 
         [[nodiscard]] RegistryRecordRange find();
 

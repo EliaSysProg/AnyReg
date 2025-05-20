@@ -1,6 +1,5 @@
 #pragma once
 
-#include "RegistryFetcher.hpp"
 #include "RegistryListModel.hpp"
 #include "ui_AnyRegApp.h"
 
@@ -20,6 +19,6 @@ private:
     bool eventFilter(QObject* obj, QEvent* event) override;
 
     Ui::AnyRegAppClass _ui;
+    anyreg::RegistryDatabase _db;
     RegistryListModel* _model = nullptr;
-    RegistryFetcher* _fetcher = nullptr;
 };

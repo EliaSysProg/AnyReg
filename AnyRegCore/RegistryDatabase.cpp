@@ -97,6 +97,8 @@ END;)");
 
     int64_t RegistryDatabase::insert_key(const RegistryKeyView& key)
     {
+        _insert_key_statement.reset();
+
         _insert_key_statement.bind_text(1, key.name);
         if (key.parent_id > 0) // 0 - no parent (hive root key)
         {
@@ -114,14 +116,12 @@ END;)");
             throw sql::StatementError(std::format("Insert key: {} returned rows: {}", key.name, _insert_key_statement.get_sql()));
         }
 
-        _insert_key_statement.reset();
-        _insert_key_statement.clear_bindings();
-
         return last_insert_rowid();
     }
 
     RegistryKeyView RegistryDatabase::get_key(int64_t id) const
     {
+        _get_key_statement.reset();
         _get_key_statement.bind_int64(1, id);
         if (!_get_key_statement.step())
         {
@@ -132,7 +132,6 @@ END;)");
         const auto parent_id = _get_key_statement.get_int64(1);
         const auto last_write_time = _get_key_statement.get_int64(2);
 
-        _get_key_statement.reset();
 
         return {
             .name = name,

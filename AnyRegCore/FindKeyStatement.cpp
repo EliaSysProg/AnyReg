@@ -32,7 +32,10 @@ namespace anyreg
         }
     }
 
-    FindKeyStatement::FindKeyStatement(const RegistryDatabase& db, const SortColumn column, const SortOrder order)
+    FindKeyStatement::FindKeyStatement(const RegistryDatabase& db,
+                                       const SortColumn column,
+                                       const SortOrder order,
+                                       const std::string_view query)
         : _db(&db),
           _find_id_statement(db.get(), std::format(R"(
 SELECT k.Id
@@ -42,21 +45,19 @@ INNER JOIN RegistryKeys_fts fts ON k.Id = fts.rowid
 ORDER BY k.{} {};)", column_name(column), order_name(order)))
 
     {
+        bind(query);
     }
 
     void FindKeyStatement::bind(const std::string_view query)
     {
-        _find_id_statement.bind_text(1, sql::query::fts_escape(query), true);
-    }
-
-    void FindKeyStatement::reset()
-    {
         _find_id_statement.reset();
+        _find_id_statement.bind_text(1, sql::query::fts_escape(query), true);
     }
 
     RegistryRecordRange FindKeyStatement::find()
     {
         std::vector<int64_t> ids;
+        _find_id_statement.reset();
         while (_find_id_statement.step())
         {
             ids.push_back(_find_id_statement.get_int64(0));

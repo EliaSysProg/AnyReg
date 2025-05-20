@@ -3,49 +3,39 @@
 
 using namespace std::chrono;
 
-static constexpr size_t FETCH_SIZE = 40;
-
 RegistryListModel::RegistryListModel(QObject* parent)
     : QAbstractTableModel(parent),
-      _empty_statement(_db.get_empty_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING)),
-      _like_statement(_db.get_like_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING)),
-      _fts_statement(_db.get_fts_query(anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING))
-
+      _db(anyreg::RegistryDatabase::open_read()),
+      _find_statement(_db, anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING),
+      _key_range(_db, {})
 {
 }
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
 {
-    if (parent.isValid())
-        return 0;
+    Q_ASSERT(!parent.isValid());
 
-    return static_cast<int>(_record_count);
+    return static_cast<int>(_key_range.size());
 }
 
 int RegistryListModel::columnCount(const QModelIndex& parent) const
 {
-    if (parent.isValid())
-        return 0;
+    Q_ASSERT(!parent.isValid());
 
     return 3;
 }
 
 QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
 {
-    if (!index.isValid() || index.row() >= rowCount())
-        return {};
-
-    const auto row = static_cast<size_t>(index.row());
-
-    if (row < _offset || row >= _offset + _entries.size())
-    {
-        fetch(row, FETCH_SIZE);
-    }
-
-    const auto& [name, path, last_write_time] = _entries.at(row - _offset);
-
     if (role == Qt::DisplayRole)
     {
+        if (index.row() != _current_index)
+        {
+            _current_entry = GuiKeyEntry(_key_range[index.row()]);
+            _current_index = index.row();
+        }
+
+        const auto& [name, path, last_write_time] = _current_entry;
         switch (index.column())
         {
         case 0: return name;
@@ -76,11 +66,11 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
 
 void RegistryListModel::set_query(const QString& query)
 {
-    _fetch_stop_source.request_stop();
-    _fetch_stop_source = {};
-    _next_query = _current_query;
-    _next_query.query = query.toLocal8Bit();
-    request_count(_next_query.query, _next_query.sort_column, _next_query.sort_order, _fetch_stop_source.get_token());
+    beginResetModel();
+    _find_statement.bind(query.toLocal8Bit().toStdString());
+    _key_range = _find_statement.find();
+    _current_index = -1;
+    endResetModel();
 }
 
 void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrder sort_order)
@@ -107,80 +97,9 @@ void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrde
                            : anyreg::SortOrder::DESCENDING;
 
     beginResetModel();
-    _current_query.sort_column = column;
-    _current_query.sort_order = order;
-    _entries.clear();
-
-    if (_current_query.query.isEmpty())
-    {
-        _empty_statement = _db.get_empty_query(_current_query.sort_column, _current_query.sort_order);
-    }
-    else if (_current_query.query.size() < 3)
-    {
-        _like_statement = _db.get_like_query(_current_query.sort_column, _current_query.sort_order);
-        _like_statement.bind_query(_current_query.query.toStdString());
-    }
-    else
-    {
-        _fts_statement = _db.get_fts_query(_current_query.sort_column, _current_query.sort_order);
-        _fts_statement.bind_query(_current_query.query.toStdString());
-    }
+    _find_statement = anyreg::FindKeyStatement(_db, column, order);
+    _find_statement.bind(_query);
+    _key_range = _find_statement.find();
+    _current_index = -1;
     endResetModel();
-}
-
-void RegistryListModel::set_count(const size_t count, const std::stop_token& stop_token)
-{
-    if (stop_token.stop_requested())
-        return;
-
-    beginResetModel();
-
-    _record_count = count;
-    _current_query = std::exchange(_next_query, {});
-    _entries.clear();
-
-    if (_current_query.query.isEmpty())
-    {
-        _empty_statement.reset();
-    }
-    else if (_current_query.query.size() < 3)
-    {
-        _like_statement.reset();
-        _like_statement.bind_query(_current_query.query.toStdString());
-    }
-    else
-    {
-        _fts_statement.reset();
-        _fts_statement.bind_query(_current_query.query.toStdString());
-    }
-
-    endResetModel();
-}
-
-void RegistryListModel::fetch(const size_t offset, const size_t limit) const
-{
-    qDebug() << std::format("Fetching {}-{} from {}", offset, offset + limit, _current_query.query.toStdString());
-    _offset = offset;
-    _entries.clear();
-    auto insert_range = [this](const anyreg::RegistryKeyView& key) { _entries.emplace_back(key); };
-    if (_current_query.query.isEmpty())
-    {
-        _empty_statement.reset();
-        _empty_statement.bind_range(offset, limit);
-        std::for_each(_empty_statement.begin(), _empty_statement.end(), insert_range);
-    }
-    else if (_current_query.query.size() < 3)
-    {
-        _like_statement.reset();
-        _like_statement.bind_range(offset, limit);
-        std::for_each(_like_statement.begin(), _like_statement.end(), insert_range);
-    }
-    else
-    {
-        _fts_statement.reset();
-        _fts_statement.bind_range(offset, limit);
-        std::for_each(_fts_statement.begin(), _fts_statement.end(), insert_range);
-    }
-
-    qDebug() << std::format("Fetched {} entries", _entries.size());
 }

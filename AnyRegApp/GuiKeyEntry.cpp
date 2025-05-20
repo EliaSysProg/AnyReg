@@ -12,7 +12,7 @@ GuiKeyEntry::GuiKeyEntry(QString name, QString path, QDateTime last_write_time)
 
 GuiKeyEntry::GuiKeyEntry(const anyreg::RegistryKeyView& key)
     : name(QString::fromLocal8Bit(key.name)),
-      path(QString::fromLocal8Bit(key.get_absolute_path())),
+      path(QString::fromLocal8Bit(std::to_string(key.parent_id))),
       last_write_time(QDateTime::fromStdTimePoint(time_point_cast<milliseconds>(clock_cast<system_clock>(key.last_write_time))))
 {
 }

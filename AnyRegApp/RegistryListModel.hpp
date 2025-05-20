@@ -21,26 +21,11 @@ public:
     void set_query(const QString& query);
     void set_sort_order(int sort_column, Qt::SortOrder sort_order);
 
-public slots:
-    void set_count(size_t count, const std::stop_token& stop_token);
-
-signals:
-    void request_count(const QString& query,
-                       anyreg::SortColumn sort_column,
-                       anyreg::SortOrder sort_order,
-                       const std::stop_token& stop_token) const;
-
 private:
-    void fetch(size_t offset, size_t limit) const;
-
     anyreg::RegistryDatabase _db;
-    mutable anyreg::EmptyStatement _empty_statement;
-    mutable anyreg::LikeStatement _like_statement;
-    mutable anyreg::FtsStatement _fts_statement;
-    GuiQuery _current_query{};
-    GuiQuery _next_query{};
-    mutable std::vector<GuiKeyEntry> _entries;
-    mutable size_t _offset{};
-    size_t _record_count{};
-    std::stop_source _fetch_stop_source;
+    std::string _query;
+    anyreg::FindKeyStatement _find_statement;
+    anyreg::RegistryRecordRange _key_range;
+    mutable GuiKeyEntry _current_entry;
+    mutable int64_t _current_index = -1;
 };

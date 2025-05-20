@@ -89,7 +89,6 @@ int main(const int argc, const char* const argv[])
                     std::println("{:7} | {} | {}", parent_id, last_write_time, name);
                 }
                 std::println("Count: {}", find_range.size());
-                find_statement.reset();
             });
 
             std::println("Time: {}", t);
