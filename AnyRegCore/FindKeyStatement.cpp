@@ -9,11 +9,11 @@ namespace anyreg
         switch (sort_column)
         {
         case SortColumn::NAME:
-            return "Name";
+            return "k.Name";
         case SortColumn::PATH:
-            return "ParentId";
+            return "full_path(k.Id)";
         case SortColumn::LAST_WRITE_TIME:
-            return "LastWriteTime";
+            return "k.LastWriteTime";
         default:
             throw std::invalid_argument("Invalid SortColumn value");
         }
@@ -42,7 +42,7 @@ SELECT k.Id
     FROM RegistryKeys k
 INNER JOIN RegistryKeys_fts fts ON k.Id = fts.rowid
     WHERE RegistryKeys_fts MATCH ?1
-ORDER BY k.{} {};)", column_name(column), order_name(order)))
+ORDER BY {} {};)", column_name(column), order_name(order)))
 
     {
         bind(query);
@@ -57,11 +57,11 @@ ORDER BY k.{} {};)", column_name(column), order_name(order)))
     RegistryRecordRange FindKeyStatement::find()
     {
         std::vector<int64_t> ids;
-        _find_id_statement.reset();
         while (_find_id_statement.step())
         {
             ids.push_back(_find_id_statement.get_int64(0));
         }
+        _find_id_statement.reset();
 
         return RegistryRecordRange{*_db, std::move(ids)};
     }

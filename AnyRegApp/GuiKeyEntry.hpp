@@ -10,5 +10,5 @@ struct GuiKeyEntry
 
     GuiKeyEntry() = default;
     GuiKeyEntry(QString name, QString path, QDateTime last_write_time);
-    GuiKeyEntry(const anyreg::RegistryKeyView& key);
+    GuiKeyEntry(const anyreg::RegistryKeyFullView& key);
 };

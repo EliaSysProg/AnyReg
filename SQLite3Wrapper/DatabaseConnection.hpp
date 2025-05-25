@@ -27,6 +27,15 @@ namespace sql
         [[nodiscard]] const wchar_t* errmsg16() const;
         [[nodiscard]] int64_t last_insert_rowid() const;
 
+        struct SqliteFunction final
+        {
+            void (*func)(sqlite3_context*, int, sqlite3_value**);
+            void (*step)(sqlite3_context*, int, sqlite3_value**);
+            void (*final)(sqlite3_context*);
+        };
+
+        void create_function(std::string_view name, int args_count, int text_encoding, void* user_data, const SqliteFunction& function) const;
+
     private:
         std::unique_ptr<sqlite3, SQLite3Deleter> _sqlite3;
     };

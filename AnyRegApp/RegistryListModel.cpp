@@ -67,7 +67,8 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
 void RegistryListModel::set_query(const QString& query)
 {
     beginResetModel();
-    _find_statement.bind(query.toLocal8Bit().toStdString());
+    _query = query.toLocal8Bit().toStdString();
+    _find_statement.bind(_query);
     _key_range = _find_statement.find();
     _current_index = -1;
     endResetModel();

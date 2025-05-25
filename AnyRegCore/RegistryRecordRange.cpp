@@ -10,9 +10,9 @@ namespace anyreg
     {
     }
 
-    RegistryKeyView RegistryRecordRange::operator[](const size_t index) const
+    RegistryKeyFullView RegistryRecordRange::operator[](const size_t index) const
     {
-        return _db->get_key(_ids[index]);
+        return _db->get_key_full(_ids[index]);
     }
 
     size_t RegistryRecordRange::size() const

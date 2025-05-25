@@ -26,4 +26,11 @@ namespace anyreg
         int64_t parent_id;
         RegistryTime last_write_time;
     };
+
+    struct RegistryKeyFullView final
+    {
+        std::string_view name;
+        std::string_view path;
+        RegistryTime last_write_time;
+    };
 }

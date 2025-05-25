@@ -54,4 +54,18 @@ namespace sql
 
         return rowid;
     }
+
+    void DatabaseConnection::create_function(const std::string_view name,
+                                             const int args_count,
+                                             const int text_encoding,
+                                             void* user_data,
+                                             const SqliteFunction& function) const
+    {
+        const auto error_code = sqlite3_create_function(_sqlite3.get(), name.data(), args_count, text_encoding, user_data,
+                                                        function.func, function.step, function.final);
+        if (error_code != SQLITE_OK)
+        {
+            throw ConnectionError(error_code);
+        }
+    }
 }

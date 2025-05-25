@@ -22,6 +22,7 @@ namespace anyreg
         [[nodiscard]] sql::ProgressHandler create_progress_handler(std::function<bool()> callback) const;
         int64_t insert_key(const RegistryKeyView& key);
         [[nodiscard]] RegistryKeyView get_key(int64_t id) const;
+        [[nodiscard]] RegistryKeyFullView get_key_full(int64_t id) const;
 
         [[nodiscard]] size_t count_keys(std::string_view query) const;
         [[nodiscard]] FindKeyStatement find_keys(SortColumn column, SortOrder order) const;
@@ -35,5 +36,6 @@ namespace anyreg
         sql::DatabaseConnection _db;
         sql::Statement _insert_key_statement;
         mutable sql::Statement _get_key_statement;
+        mutable sql::Statement _get_key_full_statement;
     };
 }
