@@ -11,6 +11,7 @@ namespace anyreg
     class RegistryRecordRange
     {
     public:
+        RegistryRecordRange() = default;
         explicit RegistryRecordRange(const RegistryDatabase& db, std::vector<int64_t> ids);
 
         [[nodiscard]] RegistryKeyFullView operator[](size_t index) const;

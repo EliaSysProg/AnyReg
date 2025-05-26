@@ -1,7 +1,7 @@
 #pragma once
 
 #include "GuiKeyEntry.hpp"
-#include "GuiQuery.hpp"
+#include "RegistryFetcher.hpp"
 #include "AnyRegCore/RegistryDatabase.hpp"
 
 #include <QAbstractTableModel>
@@ -21,10 +21,16 @@ public:
     void set_query(const QString& query);
     void set_sort_order(int sort_column, Qt::SortOrder sort_order);
 
+signals:
+    void sort_order_updated(anyreg::SortColumn sort_column, anyreg::SortOrder sort_order);
+    void query_updated(const std::string& query);
+    void request_fetch();
+
+private slots:
+    void on_results_ready(anyreg::RegistryRecordRange range);
+
 private:
-    anyreg::RegistryDatabase _db;
-    std::string _query;
-    anyreg::FindKeyStatement _find_statement;
+    RegistryFetcher _fetcher;
     anyreg::RegistryRecordRange _key_range;
     mutable GuiKeyEntry _current_entry;
     mutable int64_t _current_index = -1;

@@ -49,16 +49,13 @@
     <ClCompile Include="RegistryListModel.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RegistryFetcher.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="GuiKeyEntry.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="GuiQuery.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="RegistryTableView.cpp">
+    <ClCompile Include="RegistryFetcher.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -67,9 +64,6 @@
       <Filter>Header Files</Filter>
     </QtMoc>
     <QtMoc Include="RegistryFetcher.hpp">
-      <Filter>Header Files</Filter>
-    </QtMoc>
-    <QtMoc Include="RegistryTableView.hpp">
       <Filter>Header Files</Filter>
     </QtMoc>
   </ItemGroup>

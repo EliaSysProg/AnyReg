@@ -4,11 +4,12 @@
 using namespace std::chrono;
 
 RegistryListModel::RegistryListModel(QObject* parent)
-    : QAbstractTableModel(parent),
-      _db(anyreg::RegistryDatabase::open_read()),
-      _find_statement(_db, anyreg::SortColumn::PATH, anyreg::SortOrder::ASCENDING),
-      _key_range(_db, {})
+    : QAbstractTableModel(parent)
 {
+    connect(this, &RegistryListModel::sort_order_updated, &_fetcher, &RegistryFetcher::set_order);
+    connect(this, &RegistryListModel::query_updated, &_fetcher, &RegistryFetcher::set_query);
+    connect(this, &RegistryListModel::request_fetch, &_fetcher, &RegistryFetcher::fetch);
+    connect(&_fetcher, &RegistryFetcher::result_ready, this, &RegistryListModel::on_results_ready);
 }
 
 int RegistryListModel::rowCount(const QModelIndex& parent) const
@@ -36,6 +37,7 @@ QVariant RegistryListModel::data(const QModelIndex& index, const int role) const
         }
 
         const auto& [name, path, last_write_time] = _current_entry;
+
         switch (index.column())
         {
         case 0: return name;
@@ -66,12 +68,8 @@ QVariant RegistryListModel::headerData(const int section, const Qt::Orientation 
 
 void RegistryListModel::set_query(const QString& query)
 {
-    beginResetModel();
-    _query = query.toLocal8Bit().toStdString();
-    _find_statement.bind(_query);
-    _key_range = _find_statement.find();
-    _current_index = -1;
-    endResetModel();
+    emit query_updated(query.toLocal8Bit().toStdString());
+    emit request_fetch();
 }
 
 void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrder sort_order)
@@ -97,10 +95,14 @@ void RegistryListModel::set_sort_order(const int sort_column, const Qt::SortOrde
                            ? anyreg::SortOrder::ASCENDING
                            : anyreg::SortOrder::DESCENDING;
 
+    emit sort_order_updated(column, order);
+    emit request_fetch();
+}
+
+void RegistryListModel::on_results_ready(anyreg::RegistryRecordRange range)
+{
     beginResetModel();
-    _find_statement = anyreg::FindKeyStatement(_db, column, order);
-    _find_statement.bind(_query);
-    _key_range = _find_statement.find();
+    _key_range = std::move(range);
     _current_index = -1;
     endResetModel();
 }

@@ -15,8 +15,8 @@ namespace anyreg
         static RegistryDatabase open_read();
         static RegistryDatabase open_write();
 
-        void save(const std::filesystem::path& filename) const;
-        void load(const std::filesystem::path& filename);
+        void save() const;
+        void load();
 
         [[nodiscard]] sql::ScopedTransaction begin_scoped_transaction() const;
         [[nodiscard]] sql::ProgressHandler create_progress_handler(std::function<bool()> callback) const;

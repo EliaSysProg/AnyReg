@@ -15,10 +15,10 @@ namespace anyreg
     RegistryDatabase RegistryDatabase::create()
     {
         auto db = sql::DatabaseConnection(DATABASE_NAME, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | DEFAULT_FLAGS);
-        if (std::filesystem::exists(DATABASE_FILE_NAME))
-        {
-            sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), db);
-        }
+        // if (std::filesystem::exists(DATABASE_FILE_NAME))
+        // {
+        //     sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), db);
+        // }
 
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
@@ -50,8 +50,6 @@ CREATE TRIGGER IF NOT EXISTS RegistryKeys_au AFTER UPDATE ON RegistryKeys BEGIN
     INSERT INTO RegistryKeys_fts(rowid, Name) VALUES (new.rowid, new.Name);
 END;)");
 
-        db.execute("PRAGMA journal_mode = WAL");
-
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_name ON RegistryKeys(Name)");
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_parentid ON RegistryKeys(ParentId)");
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
@@ -80,14 +78,14 @@ END;)");
         return RegistryDatabase{std::move(db)};
     }
 
-    void RegistryDatabase::save(const std::filesystem::path& filename) const
+    void RegistryDatabase::save() const
     {
-        sql::database::backup(_db, sql::DatabaseConnection(filename.string()));
+        sql::database::backup(_db, sql::DatabaseConnection(DATABASE_FILE_NAME));
     }
 
-    void RegistryDatabase::load(const std::filesystem::path& filename)
+    void RegistryDatabase::load()
     {
-        sql::database::backup(sql::DatabaseConnection(filename.string()), _db);
+        sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), _db);
     }
 
     sql::ScopedTransaction RegistryDatabase::begin_scoped_transaction() const

@@ -2,12 +2,21 @@
 #include "AnyRegApp.hpp"
 
 #include "RegistryListModel.hpp"
+#include "AnyRegCore/RegistryIndexer.hpp"
 
 AnyRegApp::AnyRegApp(QWidget* parent)
     : QMainWindow(parent),
       _db(anyreg::RegistryDatabase::create())
 {
     _ui.setupUi(this);
+
+    for (const auto hive : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_CLASSES_ROOT, HKEY_USERS})
+    {
+        qDebug() << "Scanning registry hive" << hive;
+        anyreg::scan_registry(_db, hive);
+    }
+
+    _db.save();
 
     installEventFilter(this);
     _model = new RegistryListModel;
@@ -19,11 +28,10 @@ AnyRegApp::AnyRegApp(QWidget* parent)
     QFont bold_font = _ui.resultList->horizontalHeader()->font();
     bold_font.setBold(true);
     _ui.resultList->horizontalHeader()->setFont(bold_font);
+    _ui.searchBox->setPlaceholderText("Type 3 characters to start searching...");
 
     connect(_ui.searchBox, &QLineEdit::textChanged, _model, &RegistryListModel::set_query);
     connect(_ui.resultList->horizontalHeader(), &QHeaderView::sortIndicatorChanged, _model, &RegistryListModel::set_sort_order);
-
-    set_table_query("");
 }
 
 void AnyRegApp::set_table_query(const QString& query)

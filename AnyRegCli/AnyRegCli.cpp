@@ -62,7 +62,7 @@ int main(const int argc, const char* const argv[])
             save_thread = std::jthread([]
             {
                 TRACE(L"Saving DB");
-                anyreg::RegistryDatabase::open_read().save(L"AnyReg.db");
+                anyreg::RegistryDatabase::open_read().save();
                 TRACE(L"DB saved");
             });
         }
