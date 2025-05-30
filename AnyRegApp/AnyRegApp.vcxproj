@@ -50,15 +50,10 @@
   <ItemDefinitionGroup>
     <ClCompile>
       <RuntimeTypeInfo>true</RuntimeTypeInfo>
-      <PrecompiledHeader>Use</PrecompiledHeader>
-      <PrecompiledHeaderFile>stdafx.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
     </Link>
-    <QtMoc>
-      <PrependInclude>stdafx.h;%(PrependInclude)</PrependInclude>
-    </QtMoc>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="AnyRegApp.cpp" />
@@ -66,10 +61,8 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="RegistryFetcher.cpp" />
     <ClCompile Include="RegistryListModel.cpp" />
-    <ClCompile Include="stdafx.cpp" PrecompiledHeader="Create" />
     <ClInclude Include="GuiKeyEntry.hpp" />
     <QtMoc Include="RegistryFetcher.hpp" />
-    <ClInclude Include="stdafx.h" />
     <QtMoc Include="AnyRegApp.hpp" />
     <QtMoc Include="RegistryListModel.hpp" />
     <QtRcc Include="AnyRegApp.qrc" />

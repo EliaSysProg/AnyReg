@@ -11,7 +11,7 @@ namespace anyreg
         case SortColumn::NAME:
             return "k.Name";
         case SortColumn::PATH:
-            return "full_path(k.Id)";
+            return "k.Name";
         case SortColumn::LAST_WRITE_TIME:
             return "k.LastWriteTime";
         default:

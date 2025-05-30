@@ -1,5 +1,6 @@
-#include "stdafx.h"
 #include "RegistryFetcher.hpp"
+
+#include <QtCore>
 
 RegistryFetcher::RegistryFetcher()
     : QObject(nullptr),

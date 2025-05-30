@@ -1,6 +1,7 @@
 ﻿#include "RegistryIndexer.hpp"
 
 #include "Registry.hpp"
+#include "WinError.hpp"
 
 #include <array>
 #include <vector>
@@ -29,7 +30,7 @@ namespace anyreg
             int64_t id;
         };
 
-        db.insert_key({.name = hive_name(hive), .parent_id = 0, .last_write_time = {}});
+        db.insert_key({.name = std::string(hive_name(hive)), .parent_id = 0, .last_write_time = {}});
 
         std::vector<KeyInfo> keys_to_process;
         keys_to_process.reserve(512);
@@ -55,18 +56,17 @@ namespace anyreg
                 key_entry.parent_id = parent_id;
                 db.insert_key(key_entry);
 
-                try
+                auto sub_key_expected = parent_key.try_open_sub_key(key_entry.name, KEY_READ);
+                if (sub_key_expected.has_value())
                 {
-                    auto sub_key = parent_key.open_sub_key(key_entry.name, KEY_READ);
                     const auto rowid = db.last_insert_rowid();
-                    keys_to_process.emplace_back(std::move(sub_key), rowid);
+                    keys_to_process.emplace_back(std::move(*sub_key_expected), rowid);
                 }
-                catch (const std::system_error& e)
+                else
                 {
-                    const auto error_code = e.code().value();
-                    if (!(error_code & (ERROR_ACCESS_DENIED | ERROR_PATH_NOT_FOUND))) // What can we do?
+                    if (!(sub_key_expected.error() & (ERROR_ACCESS_DENIED | ERROR_PATH_NOT_FOUND)))
                     {
-                        throw;
+                        throw WinError(sub_key_expected.error());
                     }
                 }
 

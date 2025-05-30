@@ -29,6 +29,7 @@ namespace sql
         bool step();
         void finalize();
 
+        [[nodiscard]] int column_type(int index) const;
         [[nodiscard]] std::string_view get_text(int index) const;
         [[nodiscard]] int32_t get_int32(int index) const;
         [[nodiscard]] int64_t get_int64(int index) const;

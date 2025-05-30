@@ -22,15 +22,15 @@ namespace anyreg
 
     struct RegistryKeyView final
     {
-        std::string_view name;
+        std::string name;
         int64_t parent_id;
         RegistryTime last_write_time;
     };
 
     struct RegistryKeyFullView final
     {
-        std::string_view name;
-        std::string_view path;
+        std::string name;
+        std::string path;
         RegistryTime last_write_time;
     };
 }

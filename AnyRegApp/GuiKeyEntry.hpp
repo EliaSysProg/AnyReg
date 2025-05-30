@@ -2,6 +2,8 @@
 
 #include "AnyRegCore/RegistryEntry.hpp"
 
+#include <QtCore>
+
 struct GuiKeyEntry
 {
     QString name;

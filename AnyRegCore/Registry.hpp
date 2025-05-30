@@ -5,6 +5,7 @@
 #include <Windows.h>
 
 #include <algorithm>
+#include <expected>
 #include <span>
 
 namespace anyreg
@@ -29,6 +30,8 @@ namespace anyreg
     class RegistryKey
     {
     public:
+        static std::expected<RegistryKey, DWORD> try_open(HKEY root, std::string_view path, REGSAM access = KEY_READ);
+        
         RegistryKey() = default;
         explicit RegistryKey(HKEY root, std::string_view path, REGSAM access = KEY_READ);
         ~RegistryKey();
@@ -43,10 +46,13 @@ namespace anyreg
 
         [[nodiscard]] bool get_sub_key(DWORD index, std::span<char>& name, RegistryTime& last_write_time) const;
         [[nodiscard]] RegistryKey open_sub_key(std::string_view path, REGSAM access = KEY_READ) const;
+        [[nodiscard]] std::expected<RegistryKey, DWORD> try_open_sub_key(std::string_view path, REGSAM access = KEY_READ) const;
 
         friend void swap(RegistryKey& first, RegistryKey& second) noexcept;
 
     private:
+        explicit RegistryKey(HKEY key);
+        
         HKEY _key{};
     };
 }

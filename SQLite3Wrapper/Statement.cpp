@@ -98,6 +98,11 @@ namespace sql
         _sqlite3_stmt.reset();
     }
 
+    int Statement::column_type(const int index) const
+    {
+        return sqlite3_column_type(_sqlite3_stmt.get(), index);
+    }
+
     std::string_view Statement::get_text(const int index) const
     {
         const auto text = sqlite3_column_text(_sqlite3_stmt.get(), index);

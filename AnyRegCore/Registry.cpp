@@ -4,6 +4,18 @@
 
 namespace anyreg
 {
+    std::expected<RegistryKey, DWORD> RegistryKey::try_open(HKEY root, std::string_view path, REGSAM access)
+    {
+        HKEY key{};
+        const auto result = RegOpenKeyExA(root, path.data(), 0, access, &key);
+        if (result != ERROR_SUCCESS)
+        {
+            return std::unexpected(result);
+        }
+
+        return RegistryKey{key};
+    }
+
     RegistryKey::RegistryKey(const HKEY root, const std::string_view path, const REGSAM access)
     {
         const auto result = RegOpenKeyExA(root, path.data(), 0, access, &_key);
@@ -91,6 +103,16 @@ namespace anyreg
     RegistryKey RegistryKey::open_sub_key(const std::string_view path, const REGSAM access) const
     {
         return RegistryKey(_key, path, access);
+    }
+
+    std::expected<RegistryKey, DWORD> RegistryKey::try_open_sub_key(std::string_view path, REGSAM access) const
+    {
+        return try_open(_key, path, access);
+    }
+
+    RegistryKey::RegistryKey(HKEY key)
+        : _key(key)
+    {
     }
 
     void swap(RegistryKey& first, RegistryKey& second) noexcept

@@ -36,6 +36,6 @@ namespace anyreg
         sql::DatabaseConnection _db;
         sql::Statement _insert_key_statement;
         mutable sql::Statement _get_key_statement;
-        mutable sql::Statement _get_key_full_statement;
+        mutable sql::Statement _get_key_parent_id_statement;
     };
 }

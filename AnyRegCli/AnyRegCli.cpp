@@ -49,10 +49,10 @@ int main(const int argc, const char* const argv[])
             TRACE(L"Indexing");
             auto db_indexing = anyreg::RegistryDatabase::open_write();
             for (const auto hive : {
-                     HKEY_LOCAL_MACHINE,
+                     // HKEY_LOCAL_MACHINE,
                      // HKEY_CURRENT_USER,
                      // HKEY_USERS,
-                     // HKEY_CURRENT_CONFIG,
+                     HKEY_CURRENT_CONFIG,
                      // HKEY_CLASSES_ROOT,
                  })
             {
@@ -85,8 +85,8 @@ int main(const int argc, const char* const argv[])
                 const auto find_range = find_statement.find();
                 for (size_t i = 0; i < find_range.size() && i < 10; ++i)
                 {
-                    const auto& [name, parent_id, last_write_time] = find_range[i];
-                    std::println("{:7} | {} | {}", parent_id, last_write_time, name);
+                    const auto& [name, path, last_write_time] = find_range[i];
+                    std::println("{} | {} | {}", path, last_write_time, name);
                 }
                 std::println("Count: {}", find_range.size());
             });

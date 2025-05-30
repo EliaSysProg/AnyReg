@@ -1,5 +1,4 @@
-﻿#include "stdafx.h"
-#include "GuiKeyEntry.hpp"
+﻿#include "GuiKeyEntry.hpp"
 
 using namespace std::chrono;
 

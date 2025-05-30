@@ -1,4 +1,3 @@
-#include "stdafx.h"
 #include "RegistryListModel.hpp"
 
 using namespace std::chrono;

@@ -1,24 +1,24 @@
 ﻿#include "RegistryDatabase.hpp"
 
-#include "ApplicationDefinedFunctions.hpp"
 #include "Registry.hpp"
 
 #include <filesystem>
 #include <string>
+#include <ranges>
 
 namespace anyreg
 {
     static constexpr int DEFAULT_FLAGS = SQLITE_OPEN_NOMUTEX | SQLITE_OPEN_MEMORY | SQLITE_OPEN_URI;
-    static constexpr auto DATABASE_NAME = "file:AnyRegDb?mode=memory&cache=shared";
+    static constexpr char DATABASE_NAME[] = "file:AnyRegDb?mode=memory&cache=shared";
     static constexpr auto DATABASE_FILE_NAME = "AnyReg.db";
 
     RegistryDatabase RegistryDatabase::create()
     {
         auto db = sql::DatabaseConnection(DATABASE_NAME, SQLITE_OPEN_READWRITE | SQLITE_OPEN_CREATE | DEFAULT_FLAGS);
-        // if (std::filesystem::exists(DATABASE_FILE_NAME))
-        // {
-        //     sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), db);
-        // }
+        if (std::filesystem::exists(DATABASE_FILE_NAME))
+        {
+            sql::database::backup(sql::DatabaseConnection(DATABASE_FILE_NAME), db);
+        }
 
         db.execute(R"(
 CREATE TABLE IF NOT EXISTS RegistryKeys (
@@ -54,22 +54,18 @@ END;)");
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_parentid ON RegistryKeys(ParentId)");
         db.execute("CREATE INDEX IF NOT EXISTS idx_registrykeys_lastwritetime ON RegistryKeys(LastWriteTime)");
 
-        db.create_function("full_path", 1, SQLITE_UTF8, nullptr, {.func = full_path_udf, .step = nullptr, .final = nullptr});
-
         return RegistryDatabase{std::move(db)};
     }
 
     RegistryDatabase RegistryDatabase::open_read()
     {
         auto db = sql::DatabaseConnection(DATABASE_NAME, SQLITE_OPEN_READONLY | DEFAULT_FLAGS);
-        db.create_function("full_path", 1, SQLITE_UTF8, nullptr, {.func = full_path_udf, .step = nullptr, .final = nullptr});
         return RegistryDatabase{std::move(db)};
     }
 
     RegistryDatabase RegistryDatabase::open_write()
     {
         auto db = sql::DatabaseConnection(DATABASE_NAME, DEFAULT_FLAGS | SQLITE_OPEN_READWRITE);
-        db.create_function("full_path", 1, SQLITE_UTF8, nullptr, {.func = full_path_udf, .step = nullptr, .final = nullptr});
         if (!sqlite3_db_readonly(db.get(), DATABASE_NAME))
         {
             throw sql::DatabaseError("Database is not read-only");
@@ -137,7 +133,7 @@ END;)");
 
 
         return {
-            .name = name,
+            .name = std::string(name),
             .parent_id = parent_id,
             .last_write_time = RegistryTime{std::chrono::file_clock::duration{last_write_time}}
         };
@@ -145,22 +141,54 @@ END;)");
 
     RegistryKeyFullView RegistryDatabase::get_key_full(int64_t id) const
     {
-        _get_key_full_statement.reset();
-        _get_key_full_statement.bind_int64(1, id);
-        if (!_get_key_full_statement.step())
+        const auto key_view = get_key(id);
+        id = key_view.parent_id;
+        std::vector<std::string> names;
+
+        while (id != 0)
         {
-            throw sql::StatementError(std::format("Get key: {} Didn't return rows: {}", id, _get_key_statement.get_sql()));
+            _get_key_parent_id_statement.bind_int64(1, id);
+            const auto row_returned = _get_key_parent_id_statement.step();
+            if (row_returned)
+            {
+                if (_get_key_parent_id_statement.column_type(1) == SQLITE_NULL)
+                {
+                    OutputDebugStringA(("Found null at " + (names.empty() ? key_view.name : names.back()) + '\n').c_str());
+                }
+                id = _get_key_parent_id_statement.column_type(1) == SQLITE_NULL ? 0 : _get_key_parent_id_statement.get_int64(1);
+                names.emplace_back(_get_key_parent_id_statement.get_text(0));
+            }
+            else
+            {
+                break; // ID not found
+            }
+
+            _get_key_parent_id_statement.reset();
         }
 
-        const auto name = _get_key_full_statement.get_text(0);
-        const auto path = _get_key_full_statement.get_text(1);
-        const auto last_write_time = _get_key_full_statement.get_int64(2);
+        std::string path;
+        size_t total_size = 0;
+        for (const auto& name : names)
+        {
+            total_size += name.size() + 1; // +1 for '\'
+        }
 
+        path.reserve(total_size);
+        for (const auto& name : names | std::views::reverse)
+        {
+            path += name;
+            path += '\\';
+        }
+
+        if (!path.empty())
+        {
+            path.pop_back(); // Remove the last '\'
+        }
 
         return {
-            .name = name,
-            .path = path,
-            .last_write_time = RegistryTime{std::chrono::file_clock::duration{last_write_time}}
+            .name = key_view.name,
+            .path = std::move(path),
+            .last_write_time = key_view.last_write_time,
         };
     }
 
@@ -199,10 +227,9 @@ END;)");
 INSERT INTO RegistryKeys (Name, ParentId, LastWriteTime)
     VALUES (?, ?, ?)
 ON CONFLICT(Name, ParentId) DO UPDATE
-    SET LastWriteTime = excluded.LastWriteTime
-    WHERE excluded.LastWriteTime > RegistryKeys.LastWriteTime;)"),
-          _get_key_statement(_db, "SELECT Name, ParentId, LastWriteTime FROM RegistryKeys WHERE Id = ?;"),
-          _get_key_full_statement(_db, "SELECT Name, full_path(Id), LastWriteTime FROM RegistryKeys WHERE Id = ?;")
+    SET LastWriteTime = MAX(excluded.LastWriteTime, RegistryKeys.LastWriteTime))"),
+          _get_key_statement(_db, "SELECT Name, ParentId, LastWriteTime FROM RegistryKeys WHERE Id = ?"),
+          _get_key_parent_id_statement(_db, "SELECT Name, ParentId FROM RegistryKeys WHERE ID = ?")
     {
     }
 }

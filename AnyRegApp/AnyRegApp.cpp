@@ -1,8 +1,9 @@
-#include "stdafx.h"
 #include "AnyRegApp.hpp"
 
 #include "RegistryListModel.hpp"
 #include "AnyRegCore/RegistryIndexer.hpp"
+
+#include <QtWidgets>
 
 AnyRegApp::AnyRegApp(QWidget* parent)
     : QMainWindow(parent),
@@ -10,13 +11,19 @@ AnyRegApp::AnyRegApp(QWidget* parent)
 {
     _ui.setupUi(this);
 
-    for (const auto hive : {HKEY_LOCAL_MACHINE, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_CLASSES_ROOT, HKEY_USERS})
-    {
-        qDebug() << "Scanning registry hive" << hive;
-        anyreg::scan_registry(_db, hive);
-    }
+    // for (const auto hive : {
+    //          HKEY_LOCAL_MACHINE,
+    //          HKEY_CURRENT_USER,
+    //          HKEY_CURRENT_CONFIG,
+    //          HKEY_CLASSES_ROOT,
+    //          HKEY_USERS
+    //      })
+    // {
+    //     qDebug() << "Scanning registry hive" << hive;
+    //     anyreg::scan_registry(_db, hive);
+    // }
 
-    _db.save();
+    // _db.save();
 
     installEventFilter(this);
     _model = new RegistryListModel;

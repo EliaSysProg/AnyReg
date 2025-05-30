@@ -32,7 +32,7 @@ namespace anyreg
         if (_statement->step())
         {
             _current = RegistryKeyView{
-                .name = _statement->get_text(0),
+                .name = std::string(_statement->get_text(0)),
                 .parent_id = _statement->get_int64(1),
                 .last_write_time = RegistryTime(std::chrono::file_clock::duration(_statement->get_int64(2)))
             };
